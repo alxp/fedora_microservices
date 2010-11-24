@@ -15,6 +15,3 @@ url: http://localhost:8080/fedora
 [ContentModels]
 models: ilives:bookCModel, ilives:pageCModel
 
-[OCR]
-UseABBYYFinereader: False
-ABBYYLocation: /usr/local/ABBYYData/FRE80_M5_Linux_part_498-28_build_8-1-0-7030/Samples/CLI/
