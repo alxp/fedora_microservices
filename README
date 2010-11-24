@@ -38,11 +38,9 @@ Copy the file fedora_microservices.cfg.default to fedora_microservices.cfg, and 
 
 $ python fedora_listener.py 
 
-This will tell the script to connect to the Stomp port on the server specified in the configuration file and listen for messages on the topic 
-/topic/fedora.apim.update.  The script then determines the content models that the modified object subscribes to and re-sends the body of the message (in Fedora Atom format) out to new topics for each content model.
+This will tell the script to connect to the Stomp port on the server specified in the configuration file and listen for messages on the topic /topic/fedora.apim.update.  The script then determines the content models that the modified object subscribes to and re-sends the body of the message (in Fedora Atom format) out to new topics for each content model.
 
-For example, if an object with content model islandora:strict_pdf is updated, fedora_listener will receive the update message and
-send out a new message on the topic "/topic/fedora.contentmodel.islandora:strict_pdf".
+For example, if an object with content model islandora:strict_pdf is updated, fedora_listener will receive the update message and send out a new message on the topic "/topic/fedora.contentmodel.islandora:strict_pdf".
 
 contnet_model_listeners:
 
@@ -74,15 +72,11 @@ You can then run the script as:
 
 $ python content_model_listener.py 
 
-The content models you specify in the config file will be the only ones this instance of the content_model_listener.py script
-will pay attention to.  So you can have one instance of the script on your ABBYY FineReader server that only does OCR tasks
-and another instance of the script running on a different server that can do tasks like generating thumbnails, compressed
-JP2 images, etc. or any other task that doesn't need to be run on a specific server.
+The content models you specify in the config file will be the only ones this instance of the content_model_listener.py script will pay attention to.  So you can have one instance of the script on your ABBYY FineReader server that only does OCR tasks and another instance of the script running on a different server that can do tasks like generating thumbnails, compressed JP2 images, etc. or any other task that doesn't need to be run on a specific server.
 
 
 Plugins
 
-Extend the functionality of the content model listener by adding a new plugin.  Copy the format of an existing plugin, 
-including the description in the .yapsy-plugin file and put your custom code in your new module's runRules() function.
-
+Extend the functionality of the content model listener by adding a new plugin.  Copy the format of an existing plugin, including the description in the .yapsy-plugin file and put your custom code in your new module's runRules() function.
+  
 Then add the content model that your new plugin operates on to the list of content models in the config file. 
