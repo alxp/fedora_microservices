@@ -1,0 +1,9 @@
+[Core]
+Name = Book page content model
+Module = ilives_pageCModel
+
+[Documentation]
+Author = Alexander O'Neill
+Version = 0.1
+Website = http://islandora.ca/
+Description = Runs OCR and image processing on book page objects

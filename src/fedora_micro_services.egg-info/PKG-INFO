@@ -1,0 +1,44 @@
+Metadata-Version: 1.0
+Name: fedora-micro-services
+Version: 0.1
+Summary: Fedora Stomp Listener
+Home-page: http://islandora.ca/
+Author: Alexander ONeill
+Author-email: aoneill@upei.ca
+License: UNKNOWN
+Description: Fedora Stomp listener and content model listeners
+        
+        Authoer: Alexander O'Neill
+        E-Mail: aoneill@upei.ca
+        
+        Developed as part of the Islandora project (http://islandora.ca) at the University of Prince Edward Island Robertson LIbrary
+        
+        This package contains two sub-packages with the following structure:
+        
+        fedora_listener:
+        
+        Run fedora_listener.py with the following command-line parameters:
+        
+        python fedora_listener.py -H [Stomp broker] -P [Stomp port] -U [Fedora username] -W [Fedora password] -R [Fedora server, incl. port and context]
+        
+        This will tell the script to connect to the Stomp port on the specified server and listen for and dispatch all messages with the topic
+        /topic/fedora.apim.update.  The script then determines the content models that the modified object subscribes to and re-sends the
+        body of the message (in Fedora Atom format) out to new topics for each content model.
+        
+        For example, if an object with content model islandora:strictpdf is updated, fedora_listener will receive the update message and
+        send out a new message on the topic "/topic/fedora.contentmodel.islandora:strictpdf".
+        
+        contnet_model_listeners:
+        
+        The content_model_listener.py file is launched on the computer that you will be doing the actual object processing on. For example,
+        if you have a license for ABBYY FineReader on only one computer, then you will run this script on that machine to be able to
+        run the ABBYY CLI tools on updated Fedora objects like this:
+        
+        python content_model_listener.py -H [Stomp broker] -P [Stomp port] -U [Fedora username] -W [Fedora password] -R [Fedora server, incl. port and context] \
+        -M newspapers:pageCModel -M ilives:pageCModel
+        
+        The content models you specify on the command line will be the only ones this instance of the content_model_listener.py script
+        will pay attention to.  So you can have one instance of the script on your ABBYY FineReader server that only does OCR tasks
+        and another instance of the script running on a different server that can do tasks like generating thumbnails, compressed
+        JP2 images, etc. or any other task that doesn't need to be run on a specific server.
+Platform: UNKNOWN

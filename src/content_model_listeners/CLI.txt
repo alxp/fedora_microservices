@@ -1,0 +1,5 @@
+./CLI -ics -if ../sample.tif \
+-f PDF -pem ImageOnText -pfpf Automatic -pfq 90 -pfpr 150  -of "/home/abbyy/sample.pdf" \
+-f XML -xaca -of "/home/abbyy/sample.xml" \
+-f Text -tel -tpb -tet UTF8 -of "/home/abbyy/sample.txt"
+

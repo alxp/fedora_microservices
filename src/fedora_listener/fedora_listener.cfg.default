@@ -1,0 +1,13 @@
+[MessagingServer]
+hostname: localhost
+port: 61613
+username: fedoraAdmin
+password: fedoraAdmin
+
+[Logging]
+log_file: fedora_listener.log
+;Supported levels are DEBUG, INFO, WARNING, ERROR, CRITICAL
+log_level: INFO
+
+[RepositoryServer]
+url: http://localhost:8080/fedora
