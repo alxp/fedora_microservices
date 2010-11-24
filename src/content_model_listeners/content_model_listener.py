@@ -80,8 +80,7 @@ class ContentModelListener(ConnectionListener):
     def on_message(self, headers, body):
         """
         \see ConnectionListener::on_message
-        """
-        import ocr
+        """ 
         global TOPIC_PREFIX
         self.__print_async('MESSAGE', headers, body)
         f = feedparser.parse(body)
