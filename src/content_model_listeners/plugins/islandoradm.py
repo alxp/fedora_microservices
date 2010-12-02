@@ -69,8 +69,6 @@ class islandoradm(FedoraMicroService):
     dsIDs = ['tiff', 'jp2', 'jp2lossless', 'tn', 'xml', 'text', 'pdf']
 
     def runRules(self, obj, dsid):
-        sysout("doing something!")
-	logging.info("in runRules")
         if dsid == 'tiff':
             try:
                 tmpdir, file = get_datastream_as_file(obj, dsid, 'tiff')
@@ -79,7 +77,8 @@ class islandoradm(FedoraMicroService):
                 os.chdir(tmpdir)
                         
                 run_conversions() and update_fedora(tmpdir)
-            
+                
+                rmtree(directory, ignore_errors=True)
             except Exception as e:
                 logging.error("an exception occurred: " + e);
                 
