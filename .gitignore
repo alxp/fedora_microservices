@@ -1,2 +1,3 @@
 src/content_model_listeners/plugins/content_model_listener.cfg
 src/content_model_listeners/content_model_listener.cfg
+src/fedora_listener/fedora_listener.cfg

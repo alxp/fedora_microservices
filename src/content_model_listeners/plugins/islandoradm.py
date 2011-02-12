@@ -84,7 +84,12 @@ class IslandoraDM(FedoraMicroService):
     content_model = "islandora-dm:cmodel-page"
     def runRules(self, obj, dsid, body):
         logging.info("pid:" + obj.pid + ", dsid:" + dsid)
-        if (dsid == 'tiff') or (dsid == '' and body.find('reschedule import') >= 0):
+
+        # is this a reschedule request?
+        if dsid == '' and body.find('reschedule import') >= 0:
+            dsid = 'tiff'
+
+        if dsid == 'tiff':
             try:
                 tmpdir, tiff_file = get_datastream_as_file(obj, dsid, 'tiff')
             
