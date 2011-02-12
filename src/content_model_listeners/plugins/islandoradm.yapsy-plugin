@@ -1,5 +1,5 @@
 [Core]
-Name = Islandora DM po-page-cmodel
+Name = islandora-dm:cmodel-page
 Module = islandoradm
 
 [Documentation]

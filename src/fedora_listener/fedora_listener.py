@@ -69,10 +69,9 @@ class StompFedora(ConnectionListener):
         self.__print_async("MESSSAGE", headers, body)
         f = feedparser.parse(body)
         method = headers['methodName']
-        if method in ['addDatastream', 'modifyDatastreamByValue', 'modifyDatastreamByReference']:
+        if method in ['addDatastream', 'modifyDatastreamByValue', 'modifyDatastreamByReference', 'modifyObject']:
             tags = f['entries'][0]['tags']
             pid = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:pid'][0]
-            dsIDs = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:dsID']
             content_models = self.__get_content_models(pid) # and 'OBJ' in dsIDs:
             for content_model in content_models:
                 print "/topic/fedora.contentmodel.%s" % content_model

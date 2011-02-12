@@ -40,7 +40,7 @@ class FedoraMicroService(object):
     content_model = "fedora-system:FedoraObject-3.0" 
     dsIDs = ['DC']    
     
-    def runRules(self, obj, dsid):
+    def runRules(self, obj, dsid, body):
         
         return 
 

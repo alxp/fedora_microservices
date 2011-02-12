@@ -86,13 +86,16 @@ class ContentModelListener(ConnectionListener):
         f = feedparser.parse(body)
         tags = f['entries'][0]['tags']
         pid = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:pid'][0]
-        dsID = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:dsID'][0]
+        dsids = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:dsID']
+        dsid = ''
+        if dsids:
+            dsid = dsids[0]
         obj = self.client.getObject(pid)
         content_model = headers['destination'][len(TOPIC_PREFIX):]
         if content_model in self.contentModels:
             logging.info('Running rules for %(pid)s from %(cmodel)s.' % {'pid': obj.pid, 'cmodel': content_model} )
             for plugin in self.contentModels[content_model]: 
-                plugin.runRules(obj, dsID)
+                plugin.runRules(obj, dsid, body)
         return
 
     def on_error(self, headers, body):

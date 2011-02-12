@@ -4,6 +4,7 @@ Created on Dec 1, 2010
 @author: jesterhazy
 '''
 import subprocess
+from fcrepo.utils import NS
 from categories import FedoraMicroService
 from categories import get_datastream_as_file, update_datastream
 import os, tempfile
@@ -50,6 +51,20 @@ def run_conversions(obj, tmpdir, tiff_file):
         logging.error("error creating ocr output for " + obj.pid)
         return False
 
+    # update relationships
+    ds = obj['RELS-EXT']
+    memberships = [m for m in ds[NS.fedora.isMemberOf] if not m['value'].endswith('islandora-dm:purchase-orders-incomplete-import')]
+    ds[NS.fedora.isMemberOf] = memberships
+    ds.setContent()
+    
+    # debug
+    print ds.getContent().read()
+    
+    # purge the tiff file
+    del obj['tiff']
+
+
+
     return True
 
 def update_fedora(obj, tmpdir):
@@ -66,11 +81,10 @@ class IslandoraDM(FedoraMicroService):
     classdocs
     '''
     name = "Islandora DM Plugin"
-    content_model = "islandora-dm:po-page-cmodel"
-    #dsIDs = ['tiff', 'jp2', 'jp2lossless', 'tn', 'xml', 'text', 'pdf']
-
-    def runRules(self, obj, dsid):
-        if dsid == 'tiff':
+    content_model = "islandora-dm:cmodel-page"
+    def runRules(self, obj, dsid, body):
+        logging.info("pid:" + obj.pid + ", dsid:" + dsid)
+        if (dsid == 'tiff') or (dsid == '' and body.find('reschedule import') >= 0):
             try:
                 tmpdir, tiff_file = get_datastream_as_file(obj, dsid, 'tiff')
             
