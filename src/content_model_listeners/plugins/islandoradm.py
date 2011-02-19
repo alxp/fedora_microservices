@@ -32,7 +32,7 @@ def make_ocr(directory, tiff_file):
     return 0 == subprocess.call(["./CLI", "-ics", "-if", "%(dir)s/%(file)s" % {'dir': directory, 'file': tiff_file}, 
         "-f", "PDF", "-pem", "ImageOnText", "-pfpf", "Automatic", "-pfq", "90", "-pfpr", "150", "-of", "%(dir)s/tmp.pdf" % {'dir': directory}, 
         "-f", "XML", "-xaca", "-of", "%(dir)s/tmp.xml" % {'dir': directory}, 
-        "-f", "Text", "-tel", "-tpb", "-tet", "UTF8", "-of", "%(dir)s/tmp.txt" % {'dir': directory}])
+        "-f", "Text", "-tel", "-tet", "UTF8", "-of", "%(dir)s/tmp.txt" % {'dir': directory}])
 
 def run_conversions(obj, tmpdir, tiff_file):
     if not make_tn(tiff_file):
