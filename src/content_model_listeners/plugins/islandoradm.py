@@ -4,7 +4,7 @@ Created on Dec 1, 2010
 @author: jesterhazy
 '''
 import subprocess
-from fcrepo.utils import NS
+import string
 from categories import FedoraMicroService
 from categories import get_datastream_as_file, update_datastream
 import os, tempfile
@@ -53,16 +53,22 @@ def run_conversions(obj, tmpdir, tiff_file):
 
     # update relationships
     ds = obj['RELS-EXT']
-    memberships = [m for m in ds[NS.fedora.isMemberOf] if not m['value'].endswith('islandora-dm:purchase-orders-incomplete-import')]
-    ds[NS.fedora.isMemberOf] = memberships
-    ds.setContent()
-    
+
+    xmlstring = ds.getContent().read()
+
+    #debug
+    logging.debug('before rdf: ' + xmlstring)
+
+    lines = [line for line in string.split(xmlstring, '\n') if line.find('islandora-dm:purchase-orders-incomplete-import') < 0]
+    updated_xml_string = string.join(lines, '\n')
+
     # debug
-    print ds.getContent().read()
+    logging.debug('after rdf: ' + updated_xml_string)
     
+    ds.setContent(updated_xml_string)
+
     # purge the tiff file
     del obj['tiff']
-
 
 
     return True
