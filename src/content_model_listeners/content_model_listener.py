@@ -3,7 +3,7 @@ Created on 2010-07-20
 
 @author: al
 '''
-import fcrepo.connection, time, ConfigParser, sys, feedparser, logging, os
+import signal, fcrepo.connection, time, ConfigParser, sys, feedparser, logging, os
 from stomp.connect import Connection
 from stomp.listener import ConnectionListener, StatsListener
 from fcrepo.client import FedoraClient
@@ -199,12 +199,14 @@ class ContentModelListener(ConnectionListener):
             Remove an existing subscription - so that the client no longer receives messages from that destination.
         """
         self.conn.unsubscribe(destination)
-        
+
 if __name__ == '__main__':
     config = ConfigParser.ConfigParser({'hostname': 'localhost', 'port': '61613', 'username': 'fedoraAdmin', 'password': 'fedoraAdmin',
                                                       'log_file': 'fedora_listener.log', 'log_level': 'INFO',
                                                       'url': 'http://localhost:8080/fedora',
                                                       'models': ''})
+
+    signal.signal(signal.SIGINT, signal.SIG_DFL);
 
     if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
         config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
