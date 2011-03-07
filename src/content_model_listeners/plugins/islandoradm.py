@@ -51,36 +51,53 @@ def run_conversions(obj, tmpdir, tiff_file):
         logging.error("error creating ocr output for " + obj.pid)
         return False
 
-    # update relationships
-    ds = obj['RELS-EXT']
-
-    xmlstring = ds.getContent().read()
-
-    #debug
-    logging.debug('before rdf: ' + xmlstring)
-
-    lines = [line for line in string.split(xmlstring, '\n') if line.find('islandora-dm:purchase-orders-incomplete-import') < 0]
-    updated_xml_string = string.join(lines, '\n')
-
-    # debug
-    logging.debug('after rdf: ' + updated_xml_string)
-    
-    ds.setContent(updated_xml_string)
-
-    # purge the tiff file
-    del obj['tiff']
-
-
     return True
 
 def update_fedora(obj, tmpdir):
-    # nice if this method returned a status boolean
-    update_datastream(obj, 'tn', tmpdir + '/tmp.jpg', 'thumbnail image', 'image/jpeg')
-    update_datastream(obj, 'jp2', tmpdir + '/tmp.jp2', 'jp2 image', 'image/jp2')
-    update_datastream(obj, 'jp2lossless', tmpdir + '/tmp_lossless.jp2', 'jp2 image (lossless)', 'image/jp2')
-    update_datastream(obj, 'xml', tmpdir + '/tmp.xml', 'ocr xml', 'text/xml')
-    update_datastream(obj, 'text', tmpdir + '/tmp.txt', 'ocr text', 'text/plain')
-    update_datastream(obj, 'pdf', tmpdir + '/tmp.pdf', 'pdf', 'application/pdf')
+    if not update_fedora_add_datastreams(obj, tmpdir):
+        logging.error("error adding datastreams to " + obj.pid)
+        return False
+
+    if not update_fedora_relsext(obj):
+        logging.error("error updating relationships for " + obj.pid)
+        return False
+
+    try:
+        del obj['tiff']
+    except Exception as e:
+        logging.error("error removing tiff datastream from pid " + obj.pid + " - " + str(e))
+        return False
+    
+    return True
+
+def update_fedora_relsext(obj):
+    try:
+        ds = obj['RELS-EXT']
+
+        xmlstring = ds.getContent().read()
+        logging.debug('before rdf: ' + xmlstring)
+
+        # treating xml as text, because fcrepo ops add weird namespaces, 
+        # and no DOM modules are available
+        lines = [line for line in string.split(xmlstring, '\n') if line.find('islandora-dm:purchase-orders-incomplete-import') < 0]
+        updated_xml_string = string.join(lines, '\n')
+
+        logging.debug('after rdf: ' + updated_xml_string)
+
+        ds.setContent(updated_xml_string)
+    except Exception as e:
+        logging.error("exception: " + str(e))
+        return False
+        
+    return True
+
+def update_fedora_add_datastreams(obj, tmpdir):
+    return (update_datastream(obj, 'tn', tmpdir + '/tmp.jpg', 'thumbnail image', 'image/jpeg') and
+            update_datastream(obj, 'jp2', tmpdir + '/tmp.jp2', 'jp2 image', 'image/jp2') and
+            update_datastream(obj, 'jp2lossless', tmpdir + '/tmp_lossless.jp2', 'jp2 image (lossless)', 'image/jp2') and
+            update_datastream(obj, 'xml', tmpdir + '/tmp.xml', 'ocr xml', 'text/xml') and
+            update_datastream(obj, 'text', tmpdir + '/tmp.txt', 'ocr text', 'text/plain') and
+            update_datastream(obj, 'pdf', tmpdir + '/tmp.pdf', 'pdf', 'application/pdf'))
 
 class IslandoraDM(FedoraMicroService):
     '''
