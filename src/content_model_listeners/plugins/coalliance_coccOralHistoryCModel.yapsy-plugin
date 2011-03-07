@@ -1,0 +1,9 @@
+[Core]
+Name = Coalliance oral history content model
+Module = coalliance_coccOralHistoryCModel
+
+[Documentation]
+Author = Jonathan Green
+Version = 0.1
+Website = http://discoverygarden.ca/
+Description = does... stuff
