@@ -3,7 +3,7 @@ Created on 2010-07-20
 
 @author: al
 '''
-import signal, fcrepo.connection, time, ConfigParser, sys, feedparser, logging, os
+import fcrepo.connection, time, ConfigParser, sys, feedparser, logging, os, signal
 from stomp.connect import Connection
 from stomp.listener import ConnectionListener, StatsListener
 from fcrepo.client import FedoraClient
@@ -83,13 +83,8 @@ class ContentModelListener(ConnectionListener):
         """ 
         global TOPIC_PREFIX
         self.__print_async('MESSAGE', headers, body)
-        f = feedparser.parse(body)
-        tags = f['entries'][0]['tags']
-        pid = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:pid'][0]
-        dsids = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:dsID']
-        dsid = ''
-        if dsids:
-            dsid = dsids[0]
+        pid = headers['pid']
+        dsid = headers['dsid']
         obj = self.client.getObject(pid)
         content_model = headers['destination'][len(TOPIC_PREFIX):]
         if content_model in self.contentModels:
@@ -199,6 +194,10 @@ class ContentModelListener(ConnectionListener):
             Remove an existing subscription - so that the client no longer receives messages from that destination.
         """
         self.conn.unsubscribe(destination)
+        
+def sighandler(signum, frame):
+    sf.disconnect('');
+    sys.exit(0);
 
 if __name__ == '__main__':
     config = ConfigParser.ConfigParser({'hostname': 'localhost', 'port': '61613', 'username': 'fedoraAdmin', 'password': 'fedoraAdmin',
@@ -206,7 +205,7 @@ if __name__ == '__main__':
                                                       'url': 'http://localhost:8080/fedora',
                                                       'models': ''})
 
-    signal.signal(signal.SIGINT, signal.SIG_DFL);
+    signal.signal(signal.SIGINT, sighandler)
 
     if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
         config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
@@ -241,3 +240,5 @@ if __name__ == '__main__':
     for model in options.cmodels:
         sf.subscribe("/topic/fedora.contentmodel.%s" % (model))
         logging.info("Subscribing to topic /topic/fedora.contentmodel.%(model)s." % {'model': model})
+
+    signal.pause()
