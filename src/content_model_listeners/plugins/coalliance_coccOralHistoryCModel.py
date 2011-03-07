@@ -19,14 +19,17 @@ tn_size = (150, 200)
 def create_thumbnail(obj, dsid, tnid):
     
     # We receive a TIFF and create a Lossless JPEG 2000 file from it.
-    directory, file = get_datastream_as_file(obj, dsid)
+    directory, file = get_datastream_as_file(obj, dsid, "tmp")
     
     # Make a thumbnail with convert
-    r = subprocess.call(['convert', directory+'/'+file, '-thumbnail', \
+    r = subprocess.call(['convert', directory+'/'+file+'[0]', '-thumbnail', \
          '%sx%s' % (tn_size[0], tn_size[1]), directory+'/'+tnid])
-    
+   
     update_datastream(obj, tnid, directory+'/'+tnid, label='thumbnail', mimeType='image/jpeg')
-    
+   
+    logging.debug(directory)
+    logging.debug(file)
+    logging.debug(tnid)
     logging.debug(os.listdir(directory))
 
     rmtree(directory, ignore_errors=True)
