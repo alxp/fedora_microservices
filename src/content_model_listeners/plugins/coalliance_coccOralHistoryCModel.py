@@ -12,6 +12,8 @@ from categories import get_datastream_as_file, update_datastream
 from shutil import rmtree
 from datetime import datetime
 from fedorarelsint import RELSINTDatastream
+from fcrepo.utils import NS
+from fcrepo.connection import FedoraConnectionException
 import logging, os, subprocess, string, httplib
 
 # thumbnail constants
@@ -52,10 +54,20 @@ def create_thumbnail(obj, dsid, tnid):
     if r == 0:
         update_datastream(obj, tnid, directory+'/'+tnid, label='thumbnail', mimeType='image/jpeg')
 
-        if 'TN' not in obj:
+        # this is necessary because we are using curl, and the library caches 
+        try:
+            if (obj['TN'].label.split('/')[0] != 'image'): 
+                if(obj[dsid].mimeType.split('/')[0] == 'image'):
+                    update_datastream(obj, 'TN', directory+'/'+tnid, label=obj[dsid].mimeType, mimeType='image/jpeg')
+        except FedoraConnectionException:
             update_datastream(obj, 'TN', directory+'/'+tnid, label=obj[dsid].mimeType, mimeType='image/jpeg')
-        elif (obj[dsid].mimeType.split('/')[0] == 'image') and (obj['TN'].label.split('/')[0] != 'image'): 
-            update_datastream(obj, 'TN', directory+'/'+tnid, label=obj[dsid].mimeType, mimeType='image/jpeg')
+
+        #if 'TN' not in obj:
+        #    for ds in obj:
+        #        print ds
+        #    update_datastream(obj, 'TN', directory+'/'+tnid, label=obj[dsid].mimeType, mimeType='image/jpeg')
+        #elif (obj[dsid].mimeType.split('/')[0] == 'image') and (obj['TN'].label.split('/')[0] != 'image'): 
+        #    update_datastream(obj, 'TN', directory+'/'+tnid, label=obj[dsid].mimeType, mimeType='image/jpeg')
        
     logging.debug(directory)
     logging.debug(file)
