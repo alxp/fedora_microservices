@@ -108,9 +108,9 @@ def create_swf(obj, dsid, swfid):
 
 def check_dates(obj, dsid, derivativeid):
     date = datetime.strptime( obj[dsid].createdDate, '%Y-%m-%dT%H:%M:%S.%fZ' )
-    derdate = datetime.strptim( obj[derivativeid].createdDate, '%Y-%m-%dT%H:%M:%S.%fZ' )
+    derdate = datetime.strptime( obj[derivativeid].createdDate, '%Y-%m-%dT%H:%M:%S.%fZ' )
 
-    if date < derdate:
+    if date > derdate:
         return True
     else:
         return False

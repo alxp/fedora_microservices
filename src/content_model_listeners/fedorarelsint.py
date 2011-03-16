@@ -1,4 +1,5 @@
 from xml.dom.minidom import Document, parse, parseString;
+from xml.dom import Node
 import fcrepo;
 
 class RELSINTDatastream():
@@ -71,17 +72,18 @@ class RELSINTDatastream():
         for description in descriptions:
             if (description.getAttribute('rdf:about') == 'info:fedora/'+self.obj.pid+'/'+subject):
                 for element in description.childNodes:
-                    predicate = element.tagName.rsplit(':',1)[1]
-                    if predicate not in relationships:
-                        relationships[predicate] = []
-                    if element.hasAttribute('rdf:resource'):
-                        resource = element.getAttribute('rdf:resource')
-                        resource = resource.rsplit('/',1)[1]
-                        relationships[predicate].append(resource)
-                    else:
-                        relationships[predicate].append(element.childNodes[0].nodeValue)
+                    if( element.nodeType == Node.ELEMENT_NODE ):
+                        predicate = element.tagName.rsplit(':',1)[1]
+                        if predicate not in relationships:
+                            relationships[predicate] = []
+                        if element.hasAttribute('rdf:resource'):
+                            resource = element.getAttribute('rdf:resource')
+                            resource = resource.rsplit('/',1)[1]
+                            relationships[predicate].append(resource)
+                        else:
+                            relationships[predicate].append(element.childNodes[0].nodeValue)
 
         return relationships
 
     def update( self ):
-        self.obj['RELS-INT'].setContent( self.doc.toprettyxml() )
+        self.obj['RELS-INT'].setContent( self.doc.toxml() )
