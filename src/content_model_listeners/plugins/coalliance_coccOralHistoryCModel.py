@@ -79,7 +79,9 @@ def create_thumbnail(obj, dsid, tnid):
 def create_jp2(obj, dsid, jp2id):
     # We receive a TIFF and create a Lossless JPEG 2000 file from it.
     directory, file = get_datastream_as_file(obj, dsid, 'tiff') 
-    r = subprocess.call(["kdu_compress", "-i", directory+'/'+file, "-o", directory+"/tmpfile_lossy.jp2",\
+    r = subprocess.call(["convert", directory+'/'+file, '+compress', directory+'/uncompressed.tiff'])
+    r = subprocess.call(["kdu_compress", "-i", directory+'/uncompressed.tiff', 
+      "-o", directory+"/tmpfile_lossy.jp2",\
       "-rate", "0.5", "Clayers=1", "Clevels=7",\
       "Cprecincts={256,256},{256,256},{256,256},{128,128},{128,128},{64,64},{64,64},{32,32},{16,16}",\
       "Corder=RPCL", "ORGgen_plt=yes", "ORGtparts=R", "Cblk={32,32}", "Cuse_sop=yes"])
@@ -129,14 +131,17 @@ def check_dates(obj, dsid, derivativeid):
 
 class coalliance_coccOralHistoryCModel(FedoraMicroService):
     name = "Coalliance Oral History Cmodel"
-    content_model = "coalliance:coccOralHistoryCModel"
+    content_model = "coalliance:ADRBasicModel"
 
     # general derivative function
     def create_derivative(self, relationship, postfix, function):
         # see if we need a derivative
         if relationship in self.relationships:
             did = self.relationships[relationship][0]
-            if check_dates(self.obj, self.dsid, did):
+            try:
+                if check_dates(self.obj, self.dsid, did):
+                    function(self.obj, self.dsid, did)
+            except FedoraConnectionException:
                 function(self.obj, self.dsid, did)
         else:
             did = self.dsid.rsplit('.', 1)[0]
