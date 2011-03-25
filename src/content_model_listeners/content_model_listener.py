@@ -51,10 +51,15 @@ class ContentModelListener(ConnectionListener):
             # plugin.plugin_object is an instance of the plubin
             logging.info("Loading plugin: %(name)s for content model %(cmodel)s." % {'name': plugin.plugin_object.name, 'cmodel': plugin.plugin_object.content_model})
             plugin.plugin_object.config = config
-            if plugin.plugin_object.content_model in self.contentModels:
-                self.contentModels[plugin.plugin_object.content_model].append(plugin.plugin_object)
+            if type(plugin.plugin_object.content_model) == 'str':
+                content_models = [plugin.plugin_object.content_model]
             else:
-                self.contentModels[plugin.plugin_object.content_model] = [plugin.plugin_object]
+                content_models = plugin.plugin_object.content_model
+            for content_model in content_models:
+                if content_model in self.contentModels:
+                    self.contentModels[content_model].append(plugin.plugin_object)
+                else:
+                    self.contentModels[content_model] = [plugin.plugin_object]
     
     def __print_async(self, frame_type, headers, body):
         """
