@@ -51,10 +51,15 @@ class ContentModelListener(ConnectionListener):
             # plugin.plugin_object is an instance of the plubin
             logging.info("Loading plugin: %(name)s for content model %(cmodel)s." % {'name': plugin.plugin_object.name, 'cmodel': plugin.plugin_object.content_model})
             plugin.plugin_object.config = config
-            if plugin.plugin_object.content_model in self.contentModels:
-                self.contentModels[plugin.plugin_object.content_model].append(plugin.plugin_object)
+            if type(plugin.plugin_object.content_model) == 'str':
+                content_models = [plugin.plugin_object.content_model]
             else:
-                self.contentModels[plugin.plugin_object.content_model] = [plugin.plugin_object]
+                content_models = plugin.plugin_object.content_model
+            for content_model in content_models:
+                if content_model in self.contentModels:
+                    self.contentModels[content_model].append(plugin.plugin_object)
+                else:
+                    self.contentModels[content_model] = [plugin.plugin_object]
     
     def __print_async(self, frame_type, headers, body):
         """
@@ -207,13 +212,16 @@ if __name__ == '__main__':
 
     signal.signal(signal.SIGINT, sighandler)
 
-    if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
-        config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
-    if os.path.exists(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME})):
-        config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
-    if os.path.exists(CONFIG_FILE_NAME):
-        config.read(CONFIG_FILE_NAME)
-        
+    if( len(sys.argv) > 1 and os.path.exists(sys.argv[1]) ):
+        config.read(sys.argv[1])
+    else:
+        if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
+            config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
+        if os.path.exists(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME})):
+            config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
+        if os.path.exists(CONFIG_FILE_NAME):
+            config.read(CONFIG_FILE_NAME)
+            
     log_filename = config.get('Logging', 'log_file')
     levels = {'DEBUG':logging.DEBUG, 'INFO': logging.INFO, 'WARNING': logging.WARNING, 'ERROR':logging.ERROR, 'CRITICAL':logging.CRITICAL, 'FATAL':logging.FATAL}
     logging.basicConfig(filename = log_filename, level = levels[config.get('Logging', 'log_level')])
