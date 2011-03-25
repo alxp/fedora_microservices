@@ -14,7 +14,7 @@ from datetime import datetime
 from fedorarelsint import RELSINTDatastream
 from fcrepo.utils import NS
 from fcrepo.connection import FedoraConnectionException
-import logging, os, subprocess, string, httplib
+import logging, os, subprocess, string, httplib, re, random
 
 # thumbnail constants
 tn_postfix = '-tn.jpg'
@@ -24,6 +24,28 @@ tn_size = (150, 200)
 handleServer='sword.coalliance.org'
 handleServerPort='9080'
 handleServerApp='/handles/handles.jsp?'
+
+def mangle_dsid(dsid):
+
+    find = '[^a-zA-Z0-9\.\_\-]';
+    replace = '';
+    dsid = re.sub(find, replace, dsid)
+
+    if( len(dsid) > 64 ):
+        dsid = dsid[-64:]
+
+    if( len(dsid) > 0 and not dsid[0].isalpha() ):
+        letter = random.choice(string.letters)
+        if( len(dsid) == 64 ):
+            dsid = letter+dsid[1:]
+        else:
+            dsid = letter+dsid
+
+    if( dsid == '' ):
+        for i in range(10):
+            dsid += random.choice(string.letters)
+
+    return dsid
 
 def get_handle(obj):
     try:
@@ -92,6 +114,7 @@ def create_jp2(obj, dsid, jp2id):
       "Cprecincts={256,256},{256,256},{256,256},{128,128},{128,128},{64,64},{64,64},{32,32},{16,16}",\
       "Corder=RPCL", "ORGgen_plt=yes", "ORGtparts=R", "Cblk={32,32}", "Cuse_sop=yes"])
     if r != 0:
+        logging.info('PID:%s DSID:%s JP2 creation failed. Trying alternative.' % (obj.pid, dsid, r))
     	r = subprocess.call(["convert", directory+'/'+file, '-compress', 'JPEG2000', '-quality', '50%', directory+'/tmpfile_lossy.jp2'])
         if r != 0:
             logging.info('PID:%s DSID:%s JP2 creation failed (kdu_compress return code:%d).' % (obj.pid, dsid, r))
@@ -133,9 +156,12 @@ def create_swf(obj, dsid, swfid):
     #recieve PDF create a SWF for use with flexpaper
     directory, file = get_datastream_as_file(obj, dsid, "pdf")
     
-    r = subprocess.call(['pdf2swf', directory+'/'+file, '-o', directory+'/'+swfid, '-T 9', '-f'])
+    r = subprocess.call(['pdf2swf', directory+'/'+file, '-o', directory+'/'+swfid,\
+         '-T 9', '-f', '-t', '-s', 'storeallcharacters', '-G'])
     if r != 0:
-        r = subprocess.call(['pdf2swf', '-s', 'poly2bitmap', '-s', 'multiply=4',directory+'/'+file, '-o', directory+'/'+swfid])
+        logging.info('PID:%s DSID:%s SWF creation failed. Trying alternative.' % (obj.pid, dsid, r))
+        r = subprocess.call(['pdf2swf', directory+'/'+file, '-o', directory+'/'+swfid,\
+             '-T 9', '-f', '-t', '-s', 'storeallcharacters', '-G', '-s', 'poly2bitmap'])
         if r != 0:
             logging.info('PID:%s DSID:%s SWF creation failed (pdf2swf return code:%d).' % (obj.pid, dsid, r))
 
@@ -163,6 +189,8 @@ class coalliance_coccOralHistoryCModel(FedoraMicroService):
         # see if we need a derivative
         if relationship in self.relationships:
             did = self.relationships[relationship][0]
+            if( did != mangle_dsid(did) ):
+                logging.info("DSID mismatch Pid:%s Dsid:%s" % (self.obj.pid, self.dsid))
             try:
                 if check_dates(self.obj, self.dsid, did):
                     function(self.obj, self.dsid, did)
@@ -171,6 +199,7 @@ class coalliance_coccOralHistoryCModel(FedoraMicroService):
         else:
             did = self.dsid.rsplit('.', 1)[0]
             did += postfix
+            did = mangle_dsid(did)
             r = function(self.obj, self.dsid, did)
             if( r == 0 ):
                 self.relsint.addRelationship(self.dsid, relationship, did) 
