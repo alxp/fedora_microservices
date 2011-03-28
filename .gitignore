@@ -1,1 +1,7 @@
 src/content_model_listeners/plugins/content_model_listener.cfg
+*.cfg
+build
+dist
+*.pyc
+*.log
+src/fedora_micro_services.egg-info
