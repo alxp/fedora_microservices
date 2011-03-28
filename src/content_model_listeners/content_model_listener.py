@@ -51,7 +51,7 @@ class ContentModelListener(ConnectionListener):
             # plugin.plugin_object is an instance of the plubin
             logging.info("Loading plugin: %(name)s for content model %(cmodel)s." % {'name': plugin.plugin_object.name, 'cmodel': plugin.plugin_object.content_model})
             plugin.plugin_object.config = config
-            if type(plugin.plugin_object.content_model) == 'str':
+            if type(plugin.plugin_object.content_model).__name__ == 'str':
                 content_models = [plugin.plugin_object.content_model]
             else:
                 content_models = plugin.plugin_object.content_model
