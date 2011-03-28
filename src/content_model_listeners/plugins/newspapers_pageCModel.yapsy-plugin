@@ -1,0 +1,9 @@
+[Core]
+Name = Newspaper page content model
+Module = newspapers_pageCModel
+
+[Documentation]
+Author = Alexander O'Neill
+Version = 0.1
+Website = http://islandora.ca/
+Description = Runs OCR and image processing on newspaper page objects
