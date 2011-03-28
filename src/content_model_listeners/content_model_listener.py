@@ -3,7 +3,7 @@ Created on 2010-07-20
 
 @author: al
 '''
-import fcrepo.connection, time, ConfigParser, sys, feedparser, logging, os
+import fcrepo.connection, time, ConfigParser, sys, feedparser, logging, os, signal
 from stomp.connect import Connection
 from stomp.listener import ConnectionListener, StatsListener
 from fcrepo.client import FedoraClient
@@ -51,10 +51,15 @@ class ContentModelListener(ConnectionListener):
             # plugin.plugin_object is an instance of the plubin
             logging.info("Loading plugin: %(name)s for content model %(cmodel)s." % {'name': plugin.plugin_object.name, 'cmodel': plugin.plugin_object.content_model})
             plugin.plugin_object.config = config
-            if plugin.plugin_object.content_model in self.contentModels:
-                self.contentModels[plugin.plugin_object.content_model].append(plugin.plugin_object)
+            if type(plugin.plugin_object.content_model) == 'str':
+                content_models = [plugin.plugin_object.content_model]
             else:
-                self.contentModels[plugin.plugin_object.content_model] = [plugin.plugin_object]
+                content_models = plugin.plugin_object.content_model
+            for content_model in content_models:
+                if content_model in self.contentModels:
+                    self.contentModels[content_model].append(plugin.plugin_object)
+                else:
+                    self.contentModels[content_model] = [plugin.plugin_object]
     
     def __print_async(self, frame_type, headers, body):
         """
@@ -83,16 +88,14 @@ class ContentModelListener(ConnectionListener):
         """ 
         global TOPIC_PREFIX
         self.__print_async('MESSAGE', headers, body)
-        f = feedparser.parse(body)
-        tags = f['entries'][0]['tags']
-        pid = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:pid'][0]
-        dsID = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:dsID'][0]
+        pid = headers['pid']
+        dsid = headers['dsid']
         obj = self.client.getObject(pid)
         content_model = headers['destination'][len(TOPIC_PREFIX):]
         if content_model in self.contentModels:
             logging.info('Running rules for %(pid)s from %(cmodel)s.' % {'pid': obj.pid, 'cmodel': content_model} )
             for plugin in self.contentModels[content_model]: 
-                plugin.runRules(obj, dsID)
+                plugin.runRules(obj, dsid, body)
         return
 
     def on_error(self, headers, body):
@@ -197,19 +200,28 @@ class ContentModelListener(ConnectionListener):
         """
         self.conn.unsubscribe(destination)
         
+def sighandler(signum, frame):
+    sf.disconnect('');
+    sys.exit(0);
+
 if __name__ == '__main__':
     config = ConfigParser.ConfigParser({'hostname': 'localhost', 'port': '61613', 'username': 'fedoraAdmin', 'password': 'fedoraAdmin',
                                                       'log_file': 'fedora_listener.log', 'log_level': 'INFO',
                                                       'url': 'http://localhost:8080/fedora',
                                                       'models': ''})
 
-    if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
-        config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
-    if os.path.exists(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME})):
-        config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
-    if os.path.exists(CONFIG_FILE_NAME):
-        config.read(CONFIG_FILE_NAME)
-        
+    signal.signal(signal.SIGINT, sighandler)
+
+    if( len(sys.argv) > 1 and os.path.exists(sys.argv[1]) ):
+        config.read(sys.argv[1])
+    else:
+        if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
+            config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
+        if os.path.exists(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME})):
+            config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
+        if os.path.exists(CONFIG_FILE_NAME):
+            config.read(CONFIG_FILE_NAME)
+            
     log_filename = config.get('Logging', 'log_file')
     levels = {'DEBUG':logging.DEBUG, 'INFO': logging.INFO, 'WARNING': logging.WARNING, 'ERROR':logging.ERROR, 'CRITICAL':logging.CRITICAL, 'FATAL':logging.FATAL}
     logging.basicConfig(filename = log_filename, level = levels[config.get('Logging', 'log_level')])
@@ -236,3 +248,5 @@ if __name__ == '__main__':
     for model in options.cmodels:
         sf.subscribe("/topic/fedora.contentmodel.%s" % (model))
         logging.info("Subscribing to topic /topic/fedora.contentmodel.%(model)s." % {'model': model})
+
+    signal.pause()

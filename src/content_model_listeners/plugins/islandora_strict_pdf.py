@@ -38,7 +38,7 @@ class islandora_strictpdf(FedoraMicroService):
     content_model = "islandora:strict_pdf"
     dsIDs = ['OBJ']
 
-    def runRules(self, obj, dsid):
+    def runRules(self, obj, dsid, body):
         if dsid == 'OBJ':
             return create_pdf_thumbnail(obj)
         return obj

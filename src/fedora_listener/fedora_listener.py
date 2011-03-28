@@ -5,7 +5,7 @@ Created on 2010-07-12
 '''
 
 
-import sys, time, ConfigParser, feedparser, logging, fcrepo.connection, os
+import signal, sys, time, ConfigParser, feedparser, logging, fcrepo.connection, os
 from optparse import OptionParser
 from stomp.connect import Connection
 from stomp.listener import ConnectionListener, StatsListener
@@ -46,9 +46,9 @@ class StompFedora(ConnectionListener):
         obj = self.client.getObject(pid)
         if 'RELS-EXT' in obj:
             ds = obj['RELS-EXT']
-            return [elem['value'].split('/')[1] for elem in ds[NS.fedoramodel.hasModel]]
+            return obj, [elem['value'].split('/')[1] for elem in ds[NS.fedoramodel.hasModel]]
         else:
-            return []
+            return obj, []
         
     def on_connecting(self, host_and_port):
         """
@@ -67,16 +67,30 @@ class StompFedora(ConnectionListener):
         \see ConnectionListener::on_message
         """
         self.__print_async("MESSSAGE", headers, body)
-        f = feedparser.parse(body)
         method = headers['methodName']
-        if method in ['addDatastream', 'modifyDatastreamByValue', 'modifyDatastreamByReference']:
+        pid = headers['pid']
+
+        newheaders = { 'methodname':headers['methodName'], 'pid':headers['pid']}
+
+        if method in ['addDatastream', 'modifyDatastreamByValue', 'modifyDatastreamByReference', 'modifyObject']:
+            f = feedparser.parse(body)
             tags = f['entries'][0]['tags']
-            pid = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:pid'][0]
-            dsIDs = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:dsID']
-            content_models = self.__get_content_models(pid) # and 'OBJ' in dsIDs:
+            dsids = [tag['term'] for tag in tags if tag['scheme'] == 'fedora-types:dsID']
+            dsid = ''
+            if dsids:
+                dsid = dsids[0]
+            newheaders['dsid'] = dsid
+            obj, content_models = self.__get_content_models(pid) # and 'OBJ' in dsIDs:
             for content_model in content_models:
-                print "/topic/fedora.contentmodel.%s" % content_model
-                self.send("/topic/fedora.contentmodel.%s" % content_model, '', body)
+                print "/topic/fedora.contentmodel.%s %s" % (content_model, dsid)
+                self.send("/topic/fedora.contentmodel.%s" % content_model, newheaders, body)
+        elif method in ['ingest']:
+            obj, content_models = self.__get_content_models(pid)
+            for dsid in obj:
+                for content_model in content_models:
+                    newheaders['dsid'] = dsid
+                    print "/topic/fedora.contentmodel.%s %s" % (content_model, dsid)
+                    self.send("/topic/fedora.contentmodel.%s" % content_model, newheaders, body)
         
     def on_error(self, headers, body):
         """
@@ -144,7 +158,7 @@ class StompFedora(ConnectionListener):
         except NotConnectedException:
             pass
     
-    def send(self, destination, correlation_id, message):
+    def send(self, destination, headers, message):
         """
         Required Parametes:
             destination - where to send the message
@@ -153,7 +167,7 @@ class StompFedora(ConnectionListener):
         Description:
         Sends a message to a destination in the message system.
         """
-        self.conn.send(destination=destination, message=message, headers={'correlation-id': correlation_id})
+        self.conn.send(destination=destination, message=message, headers=headers)
         
     def subscribe(self, destination, ack='auto'):
         """
@@ -178,13 +192,18 @@ class StompFedora(ConnectionListener):
             Remove an existing subscription - so that the client no longer receives messages from that destination.
         """
         self.conn.unsubscribe(destination)
-        
-        
+
+def sighandler(signum, frame):
+    sf.disconnect('');
+    sys.exit(0);
 
 if __name__ == '__main__':
     config = ConfigParser.ConfigParser({'hostname': 'localhost', 'port': '61613', 'username': 'fedoraAdmin', 'password': 'fedoraAdmin',
                                                       'log_file': 'fedora_listener.log', 'log_level': 'INFO',
                                                       'url': 'http://localhost:8080/fedora'})
+    
+    signal.signal(signal.SIGINT, sighandler);
+
     if os.path.exists(CONFIG_FILE_NAME):
         config.read(CONFIG_FILE_NAME)
     if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
@@ -212,4 +231,5 @@ if __name__ == '__main__':
     sf = StompFedora(options.host, options.port, options.user, options.password, options.fedoraurl)
 
     sf.subscribe('/topic/fedora.apim.update')
-    
+
+    signal.pause();

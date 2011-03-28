@@ -73,7 +73,7 @@ class ilives_pageCModel(FedoraMicroService):
     content_model = "ilives:pageCModel"
     dsIDs = ['TIFF', 'JP2', 'LosslessJP2']
 
-    def runRules(self, obj, dsid):
+    def runRules(self, obj, dsid, body):
         if dsid == 'TIFF':
             # Create JPEG2000 images.
             create_jp2(obj, dsid)

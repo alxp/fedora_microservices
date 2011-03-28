@@ -4,6 +4,7 @@ Created on Dec 1, 2010
 @author: jesterhazy
 '''
 import subprocess
+import string
 from categories import FedoraMicroService
 from categories import get_datastream_as_file, update_datastream
 import os, tempfile
@@ -31,7 +32,7 @@ def make_ocr(directory, tiff_file):
     return 0 == subprocess.call(["./CLI", "-ics", "-if", "%(dir)s/%(file)s" % {'dir': directory, 'file': tiff_file}, 
         "-f", "PDF", "-pem", "ImageOnText", "-pfpf", "Automatic", "-pfq", "90", "-pfpr", "150", "-of", "%(dir)s/tmp.pdf" % {'dir': directory}, 
         "-f", "XML", "-xaca", "-of", "%(dir)s/tmp.xml" % {'dir': directory}, 
-        "-f", "Text", "-tel", "-tpb", "-tet", "UTF8", "-of", "%(dir)s/tmp.txt" % {'dir': directory}])
+        "-f", "Text", "-tel", "-tet", "UTF8", "-of", "%(dir)s/tmp.txt" % {'dir': directory}])
 
 def run_conversions(obj, tmpdir, tiff_file):
     if not make_tn(tiff_file):
@@ -53,23 +54,64 @@ def run_conversions(obj, tmpdir, tiff_file):
     return True
 
 def update_fedora(obj, tmpdir):
-    # nice if this method returned a status boolean
-    update_datastream(obj, 'tn', tmpdir + '/tmp.jpg', 'thumbnail image', 'image/jpeg')
-    update_datastream(obj, 'jp2', tmpdir + '/tmp.jp2', 'jp2 image', 'image/jp2')
-    update_datastream(obj, 'jp2lossless', tmpdir + '/tmp_lossless.jp2', 'jp2 image (lossless)', 'image/jp2')
-    update_datastream(obj, 'xml', tmpdir + '/tmp.xml', 'ocr xml', 'text/xml')
-    update_datastream(obj, 'text', tmpdir + '/tmp.txt', 'ocr text', 'text/plain')
-    update_datastream(obj, 'pdf', tmpdir + '/tmp.pdf', 'pdf', 'application/pdf')
+    if not update_fedora_add_datastreams(obj, tmpdir):
+        logging.error("error adding datastreams to " + obj.pid)
+        return False
+
+    if not update_fedora_relsext(obj):
+        logging.error("error updating relationships for " + obj.pid)
+        return False
+
+    try:
+        del obj['tiff']
+    except Exception as e:
+        logging.error("error removing tiff datastream from pid " + obj.pid + " - " + str(e))
+        return False
+    
+    return True
+
+def update_fedora_relsext(obj):
+    try:
+        ds = obj['RELS-EXT']
+
+        xmlstring = ds.getContent().read()
+        logging.debug('before rdf: ' + xmlstring)
+
+        # treating xml as text, because fcrepo ops add weird namespaces, 
+        # and no DOM modules are available
+        lines = [line for line in string.split(xmlstring, '\n') if line.find('islandora-dm:purchase-orders-incomplete-import') < 0]
+        updated_xml_string = string.join(lines, '\n')
+
+        logging.debug('after rdf: ' + updated_xml_string)
+
+        ds.setContent(updated_xml_string)
+    except Exception as e:
+        logging.error("exception: " + str(e))
+        return False
+        
+    return True
+
+def update_fedora_add_datastreams(obj, tmpdir):
+    return (update_datastream(obj, 'tn', tmpdir + '/tmp.jpg', 'thumbnail image', 'image/jpeg') and
+            update_datastream(obj, 'jp2', tmpdir + '/tmp.jp2', 'jp2 image', 'image/jp2') and
+            update_datastream(obj, 'jp2lossless', tmpdir + '/tmp_lossless.jp2', 'jp2 image (lossless)', 'image/jp2') and
+            update_datastream(obj, 'xml', tmpdir + '/tmp.xml', 'ocr xml', 'text/xml') and
+            update_datastream(obj, 'text', tmpdir + '/tmp.txt', 'ocr text', 'text/plain') and
+            update_datastream(obj, 'pdf', tmpdir + '/tmp.pdf', 'pdf', 'application/pdf'))
 
 class IslandoraDM(FedoraMicroService):
     '''
     classdocs
     '''
     name = "Islandora DM Plugin"
-    content_model = "islandora-dm:po-page-cmodel"
-    #dsIDs = ['tiff', 'jp2', 'jp2lossless', 'tn', 'xml', 'text', 'pdf']
+    content_model = "islandora-dm:cmodel-page"
+    def runRules(self, obj, dsid, body):
+        logging.info("pid:" + obj.pid + ", dsid:" + dsid)
 
-    def runRules(self, obj, dsid):
+        # is this a reschedule request?
+        if dsid == '' and body.find('reschedule import') >= 0:
+            dsid = 'tiff'
+
         if dsid == 'tiff':
             try:
                 tmpdir, tiff_file = get_datastream_as_file(obj, dsid, 'tiff')
