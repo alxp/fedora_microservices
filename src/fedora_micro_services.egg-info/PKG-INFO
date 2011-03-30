@@ -13,32 +13,80 @@ Description: Fedora Stomp listener and content model listeners
         
         Developed as part of the Islandora project (http://islandora.ca) at the University of Prince Edward Island Robertson LIbrary
         
+        Installation requirements:
+        
+        Dependencies:
+        
+        This script uses the fcrepo, stompy and yapsy python libraries. These should be downloaded and installed automatically if you run setup.py script:
+        
+        $ python setup.py install
+        
+        Note that fcrepo depends on the lxml libraries, which have caused problems with automatic installation on some operating systems.  See http://stackoverflow.com/questions/1512530/cant-install-lxml-python-2-6-3-osx-10-6-snow-leopard for Mac OS X 10.6 Snow Leopard installation.
+        
+        Fedora Setup:
+        
+        To use this package with Fedora's built-in ActiveMQ broker you will need to download the Spring distribution from http://www.springsource.org/download . Then copy the .jar files from the download package's dist directory into $FEDORA_HOME/tomcat/webapps/fedora/WEB-INF/lib to enable Stomp support in Fedora's embedded ActiveMQ broker.
+        
+        Then edit your Fedora instance's configuration to add a Stomp broker. Edit $FEDORA_HOME/server/config/fedora.fcfg and edit the messaging section
+        
+        <param name="java.naming.provider.url" value="vm:(broker:(tcp://localhost:61616,stomp://localhost:61613))"/>
+        
+        Adding the Stomp URL will send messages to both the ActiveMQ port on 61616 and the Stomp port on 61613.
+        
+        Restart Fedora and it should be ready to go.
+        
+        
         This package contains two sub-packages with the following structure:
         
         fedora_listener:
         
         Run fedora_listener.py with the following command-line parameters:
         
-        python fedora_listener.py -H [Stomp broker] -P [Stomp port] -U [Fedora username] -W [Fedora password] -R [Fedora server, incl. port and context]
+        Copy the file fedora_microservices.cfg.default to fedora_microservices.cfg, and edit it to point to your Fedora repository.
         
-        This will tell the script to connect to the Stomp port on the specified server and listen for and dispatch all messages with the topic
-        /topic/fedora.apim.update.  The script then determines the content models that the modified object subscribes to and re-sends the
-        body of the message (in Fedora Atom format) out to new topics for each content model.
+        $ python fedora_listener.py 
         
-        For example, if an object with content model islandora:strictpdf is updated, fedora_listener will receive the update message and
-        send out a new message on the topic "/topic/fedora.contentmodel.islandora:strictpdf".
+        This will tell the script to connect to the Stomp port on the server specified in the configuration file and listen for messages on the topic /topic/fedora.apim.update.  The script then determines the content models that the modified object subscribes to and re-sends the body of the message (in Fedora Atom format) out to new topics for each content model.
+        
+        For example, if an object with content model islandora:strict_pdf is updated, fedora_listener will receive the update message and send out a new message on the topic "/topic/fedora.contentmodel.islandora:strict_pdf".
         
         contnet_model_listeners:
         
-        The content_model_listener.py file is launched on the computer that you will be doing the actual object processing on. For example,
-        if you have a license for ABBYY FineReader on only one computer, then you will run this script on that machine to be able to
-        run the ABBYY CLI tools on updated Fedora objects like this:
+        The content model listener can be run on the same host or on different or multiple other hosts.  You should only specify the content models you are interested in acting on in the specific instance of the script.  
         
-        python content_model_listener.py -H [Stomp broker] -P [Stomp port] -U [Fedora username] -W [Fedora password] -R [Fedora server, incl. port and context] \
-        -M newspapers:pageCModel -M ilives:pageCModel
+        The config file format is like this:
         
-        The content models you specify on the command line will be the only ones this instance of the content_model_listener.py script
-        will pay attention to.  So you can have one instance of the script on your ABBYY FineReader server that only does OCR tasks
-        and another instance of the script running on a different server that can do tasks like generating thumbnails, compressed
-        JP2 images, etc. or any other task that doesn't need to be run on a specific server.
+        [MessagingServer]
+        hostname: localhost
+        port: 61613
+        username: fedoraAdmin
+        password: fedoraAdmin
+        
+        [Logging]
+        log_file: content_model_listener.log
+        ;Supported levels are DEBUG, INFO, WARNING, ERROR, CRITICAL
+        log_level: INFO
+        
+        [RepositoryServer]
+        url: http://localhost:8080/fedora
+        
+        [ContentModels]
+        models: ilives:bookCModel, ilives:pageCModel
+        
+        
+        This is identical to the config file for fedora_listener.cfg, with the addition of the content models to listen for updates on.
+        
+        You can then run the script as:
+        
+        $ python content_model_listener.py 
+        
+        The content models you specify in the config file will be the only ones this instance of the content_model_listener.py script will pay attention to.  So you can have one instance of the script on your ABBYY FineReader server that only does OCR tasks and another instance of the script running on a different server that can do tasks like generating thumbnails, compressed JP2 images, etc. or any other task that doesn't need to be run on a specific server.
+        
+        
+        Plugins
+        
+        Extend the functionality of the content model listener by adding a new plugin.  Copy the format of an existing plugin, including the description in the .yapsy-plugin file and put your custom code in your new module's runRules() function.
+          
+        Then add the content model that your new plugin operates on to the list of content models in the config file. 
+        
 Platform: UNKNOWN

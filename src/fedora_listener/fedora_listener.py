@@ -82,14 +82,14 @@ class StompFedora(ConnectionListener):
             newheaders['dsid'] = dsid
             obj, content_models = self.__get_content_models(pid) # and 'OBJ' in dsIDs:
             for content_model in content_models:
-                print "/topic/fedora.contentmodel.%s %s" % (content_model, dsid)
+                logging.info("/topic/fedora.contentmodel.%s %s" % (content_model, dsid))
                 self.send("/topic/fedora.contentmodel.%s" % content_model, newheaders, body)
         elif method in ['ingest']:
             obj, content_models = self.__get_content_models(pid)
             for dsid in obj:
                 for content_model in content_models:
                     newheaders['dsid'] = dsid
-                    print "/topic/fedora.contentmodel.%s %s" % (content_model, dsid)
+                    logging.info("/topic/fedora.contentmodel.%s %s" % (content_model, dsid))
                     self.send("/topic/fedora.contentmodel.%s" % content_model, newheaders, body)
         
     def on_error(self, headers, body):

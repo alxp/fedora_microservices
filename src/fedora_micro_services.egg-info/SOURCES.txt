@@ -2,8 +2,9 @@ README
 setup.py
 src/content_model_listeners/__init__.py
 src/content_model_listeners/base.py
+src/content_model_listeners/categories.py
 src/content_model_listeners/content_model_listener.py
-src/content_model_listeners/ocr.py
+src/content_model_listeners/fedorarelsint.py
 src/content_model_listeners/strictpdf.py
 src/fedora_listener/__init__.py
 src/fedora_listener/fedora_listener.py
