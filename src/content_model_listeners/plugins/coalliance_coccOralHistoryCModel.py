@@ -26,7 +26,6 @@ handleServerPort='9080'
 handleServerApp='/handles/handles.jsp?'
 
 def mangle_dsid(dsid):
-
     find = '[^a-zA-Z0-9\.\_\-]';
     replace = '';
     dsid = re.sub(find, replace, dsid)
@@ -65,7 +64,6 @@ def get_handle(obj):
         return False
 
 def create_thumbnail(obj, dsid, tnid):
-    
     # We receive a file and create a jpg thumbnail
     directory, file = get_datastream_as_file(obj, dsid, "tmp")
     
@@ -84,7 +82,7 @@ def create_thumbnail(obj, dsid, tnid):
         except FedoraConnectionException:
             update_datastream(obj, 'TN', directory+'/'+tnid, label=obj[dsid].mimeType, mimeType='image/jpeg')
     else :
-        logging.info('PID:%s DSID:%s Thumbnail creation failed (return code:%d).' % (obj.pid, dsid, r))
+        logging.warning('PID:%s DSID:%s Thumbnail creation failed (return code:%d).' % (obj.pid, dsid, r))
         #if 'TN' not in obj:
         #    for ds in obj:
         #        print ds
@@ -105,7 +103,7 @@ def create_jp2(obj, dsid, jp2id):
     directory, file = get_datastream_as_file(obj, dsid, 'tiff') 
     r = subprocess.call(["convert", directory+'/'+file, '+compress', directory+'/uncompressed.tiff'])
     if r != 0:
-        logging.info('PID:%s DSID:%s JP2 creation failed (convert return code:%d).') % (obj.pid, dsid, r)
+        logging.warning('PID:%s DSID:%s JP2 creation failed (convert return code:%d).' % (obj.pid, dsid, r))
         rmtree(directory, ignore_errors=True)
         return r;
     r = subprocess.call(["kdu_compress", "-i", directory+'/uncompressed.tiff', 
@@ -114,10 +112,10 @@ def create_jp2(obj, dsid, jp2id):
       "Cprecincts={256,256},{256,256},{256,256},{128,128},{128,128},{64,64},{64,64},{32,32},{16,16}",\
       "Corder=RPCL", "ORGgen_plt=yes", "ORGtparts=R", "Cblk={32,32}", "Cuse_sop=yes"])
     if r != 0:
-        logging.info('PID:%s DSID:%s JP2 creation failed. Trying alternative.' % (obj.pid, dsid, r))
+        logging.warning('PID:%s DSID:%s JP2 creation failed. Trying alternative.' % (obj.pid, dsid))
     	r = subprocess.call(["convert", directory+'/'+file, '-compress', 'JPEG2000', '-quality', '50%', directory+'/tmpfile_lossy.jp2'])
         if r != 0:
-            logging.info('PID:%s DSID:%s JP2 creation failed (kdu_compress return code:%d).' % (obj.pid, dsid, r))
+            logging.warning('PID:%s DSID:%s JP2 creation failed (kdu_compress return code:%d).' % (obj.pid, dsid, r))
 
     if r == 0:
         update_datastream(obj, jp2id, directory+'/tmpfile_lossy.jp2', label='Compressed JPEG2000', mimeType='image/jp2')
@@ -134,7 +132,7 @@ def create_mp3(obj, dsid, mp3id):
     if r == 0:
       update_datastream(obj, mp3id, directory+'/'+mp3id, label='compressed to mp3', mimeType='audio/mpeg')
     else:
-      logging.info('PID:%s DSID:%s MP3 creation failed (lame return code:%d).' % (obj.pid, dsid, r))
+      logging.warning('PID:%s DSID:%s MP3 creation failed (lame return code:%d).' % (obj.pid, dsid, r))
 
     rmtree(directory, ignore_errors=True)
     return r
@@ -148,7 +146,7 @@ def create_ogg(obj, dsid, oggid):
     if r == 0:
         update_datastream(obj, oggid, directory+'/'+oggid, label='compressed to ogg', mimeType='audio/ogg')
     else:
-        logging.info('PID:%s DSID:%s OGG creation failed (ffmpeg return code:%d).' % (obj.pid, dsid, r))
+        logging.warning('PID:%s DSID:%s OGG creation failed (ffmpeg return code:%d).' % (obj.pid, dsid, r))
     rmtree(directory, ignore_errors=True)
     return r
 
@@ -159,11 +157,11 @@ def create_swf(obj, dsid, swfid):
     r = subprocess.call(['pdf2swf', directory+'/'+file, '-o', directory+'/'+swfid,\
          '-T 9', '-f', '-t', '-s', 'storeallcharacters', '-G'])
     if r != 0:
-        logging.info('PID:%s DSID:%s SWF creation failed. Trying alternative.' % (obj.pid, dsid, r))
+        logging.warning('PID:%s DSID:%s SWF creation failed. Trying alternative.' % (obj.pid, dsid))
         r = subprocess.call(['pdf2swf', directory+'/'+file, '-o', directory+'/'+swfid,\
              '-T 9', '-f', '-t', '-s', 'storeallcharacters', '-G', '-s', 'poly2bitmap'])
         if r != 0:
-            logging.info('PID:%s DSID:%s SWF creation failed (pdf2swf return code:%d).' % (obj.pid, dsid, r))
+            logging.warning('PID:%s DSID:%s SWF creation failed (pdf2swf return code:%d).' % (obj.pid, dsid, r))
 
     if r == 0:
         update_datastream(obj, swfid, directory+'/'+swfid, label='pdf to swf', mimeType='application/x-shockwave-flash')
@@ -182,7 +180,7 @@ def check_dates(obj, dsid, derivativeid):
 
 class coalliance_coccOralHistoryCModel(FedoraMicroService):
     name = "Coalliance Oral History Cmodel"
-    content_model = "codearl:codearlBasicObject"
+    content_model =  ['codearl:codearlBasicObject', 'coccc:cocccBasicObject', 'cog:cogBasicObject', 'cogru:cogruBasicObject', 'wyu:wyuBasicObject', 'codu:coduBasicObject', 'codr:codrBasicObject', 'cogjm:cogjmBasicObject', 'co:coBasicObject', 'cowjcpl:cowjcplBasicObject', 'gopig:gopigBasicObject', 'coccc:cocccBasicETD', 'cog:cogBasicETD', 'cogru:cogruBasicETD', 'wyu:wyuBasicETD', 'codu:coduBasicETD', 'codr:codrBasicETD', 'cogjm:cogjmBasicETD', 'codr:codrBasicVRA', 'co:coPublications']
 
     # general derivative function
     def create_derivative(self, relationship, postfix, function):
@@ -190,7 +188,7 @@ class coalliance_coccOralHistoryCModel(FedoraMicroService):
         if relationship in self.relationships:
             did = self.relationships[relationship][0]
             if( did != mangle_dsid(did) ):
-                logging.info("DSID mismatch Pid:%s Dsid:%s" % (self.obj.pid, self.dsid))
+                logging.warning("DSID mismatch Pid:%s Dsid:%s" % (self.obj.pid, self.dsid))
             try:
                 if check_dates(self.obj, self.dsid, did):
                     function(self.obj, self.dsid, did)
@@ -233,26 +231,35 @@ class coalliance_coccOralHistoryCModel(FedoraMicroService):
 
     # this is a simple dispatcher that will run functions based on mimetype
     def mimetype_dispatch(self):
-        # translate - / + . into _ for the mimetype function
-        trantab = string.maketrans('-/+.','____')
-        mime =  self.obj[self.dsid].mimeType.encode('ascii')
-        mime_function_name = mime.translate(trantab)
-        # get the function from the self object and run it
-        mime_function = getattr( self, mime_function_name, self.mimetype_none )
-        mime_function()
+        try:
+            # translate - / + . into _ for the mimetype function
+            trantab = string.maketrans('-/+.','____')
+            mime =  self.obj[self.dsid].mimeType.encode('ascii')
+            mime_function_name = mime.translate(trantab)
+            # get the function from the self object and run it
+            mime_function = getattr( self, mime_function_name, self.mimetype_none )
+            mime_function()
+        except KeyError:
+            # we catch a key error because .mimeType throws one 
+            # if no mimeType is defined 
+            return; 
 
     def runRules(self, obj, dsid, body):
  
         self.obj = obj
         self.dsid = dsid
-        self.relsint = RELSINTDatastream(obj)
-        self.relationships = self.relsint.getRelationships(dsid)
+        try:
+            self.relsint = RELSINTDatastream(obj)
+            self.relationships = self.relsint.getRelationships(dsid)
 
-        # work on the files based on mimetype
-        self.mimetype_dispatch()
+            # work on the files based on mimetype
+            self.mimetype_dispatch()
 
-        #TODO
-        #handle MODS handle stuff 
+            #TODO
+            #handle MODS handle stuff 
+        except FedoraConnectionException:
+            logging.warning('Object %s does not exist.' % obj.pid)
+            
 
     def __init__(self):
         '''

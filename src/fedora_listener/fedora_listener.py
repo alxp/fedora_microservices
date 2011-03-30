@@ -209,7 +209,7 @@ if __name__ == '__main__':
     if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
         config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
     if os.path.exists(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME})):
-        config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
+        config.read(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME}))
     
     levels = {'DEBUG':logging.DEBUG, 'INFO': logging.INFO, 'WARNING': logging.WARNING, 'ERROR':logging.ERROR, 'CRITICAL':logging.CRITICAL, 'FATAL':logging.FATAL}
     logging.basicConfig(filename = config.get('Logging', 'log_file'), level = levels[config.get('Logging', 'log_level')])

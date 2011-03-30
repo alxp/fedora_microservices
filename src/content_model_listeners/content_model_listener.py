@@ -12,6 +12,7 @@ from stomp.exception import NotConnectedException
 from optparse import OptionParser
 from categories import FedoraMicroService
 from yapsy.PluginManager import PluginManager
+from fcrepo.connection import FedoraConnectionException
 
 # Add the URI reference for Fedora content models to the available namespaces.
 NS['fedoramodel'] = u"info:fedora/fedora-system:def/model#"
@@ -90,13 +91,15 @@ class ContentModelListener(ConnectionListener):
         self.__print_async('MESSAGE', headers, body)
         pid = headers['pid']
         dsid = headers['dsid']
-        obj = self.client.getObject(pid)
-        content_model = headers['destination'][len(TOPIC_PREFIX):]
-        if content_model in self.contentModels:
-            logging.info('Running rules for %(pid)s from %(cmodel)s.' % {'pid': obj.pid, 'cmodel': content_model} )
-            for plugin in self.contentModels[content_model]: 
-                plugin.runRules(obj, dsid, body)
-        return
+        try:
+            obj = self.client.getObject(pid)
+            content_model = headers['destination'][len(TOPIC_PREFIX):]
+            if content_model in self.contentModels:
+                logging.info('Running rules for %(pid)s from %(cmodel)s.' % {'pid': obj.pid, 'cmodel': content_model} )
+                for plugin in self.contentModels[content_model]: 
+                   plugin.runRules(obj, dsid, body)
+        except FedoraConnectionException:
+            logging.warning('Object %s was not found.' % (pid))
 
     def on_error(self, headers, body):
         """
@@ -218,7 +221,7 @@ if __name__ == '__main__':
         if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
             config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
         if os.path.exists(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME})):
-            config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
+            config.read( os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME}))
         if os.path.exists(CONFIG_FILE_NAME):
             config.read(CONFIG_FILE_NAME)
             

@@ -1,0 +1,87 @@
+#!/bin/sh
+#
+#
+#
+#   Startup/shutdown script for running JMS.
+#
+#   Linux chkconfig stuff:
+#
+#   chkconfig: 2345 70 10
+#   description: Startup/shutdown script for running JMS.
+#
+# Source function library.
+
+PROG=JMS
+
+PYTHON=/opt/ActivePython-2.7/bin/python
+
+# *** Please make sure you change the fedora user to reflect the local setup. ***
+
+FEDORA_USER=fedora
+
+start () {
+	echo -n "Starting $PROG: "
+	# check to see if the process is already running
+	if [ -f /var/lock/jms ]; then
+		echo "$PROG is already running"
+	else
+			# start JMS as the fedora user
+			su - $FEDORA_USER -c "$PYTHON /opt/fedora_microservices/src/fedora_listener/fedora_listener.py &" >/dev/null 2>&1
+        		su - $FEDORA_USER -c "$PYTHON /opt/fedora_microservices/src/content_model_listeners/content_model_listener.py &" >/dev/null 2>&1
+			sleep 3
+			ps -ef | grep 'content_model' | grep -v 'grep'  >/dev/null 2>&1
+			RETVAL=$?
+			if [ $RETVAL = 0 ]; then
+				touch /var/lock/jms
+				echo "                                          [ \033[0;32m OK\033[0;39m""  ]"
+			else
+				echo "                                          [ \033[0;31m FAILED\033[0;39m""  ]"
+			fi
+		fi
+}
+
+stop () {
+	# stop daemon
+	echo -n "Stopping $PROG: "
+	# check to see if the process is running
+	if [ ! -f /var/lock/jms ]; then
+		echo "$PROG is not running"
+	else
+		# use kill -2 to stop JMS.
+		kill -2 `ps -ef | grep fedora_listener | grep -v grep | awk '{print $2}'` &>/dev/null
+		kill -2 `ps -ef | grep content_model_listener | grep -v grep | awk '{print $2}'` &>/dev/null
+		RETVAL=$?
+		echo "                                          [ \033[0;32m OK\033[0;39m""  ]"
+		[ $RETVAL = 0 ] && rm -f /var/lock/jms
+	fi
+}
+
+restart() {
+	stop
+	start
+}
+
+case $1 in
+	start)
+		start
+	;;
+	stop)
+		stop
+	;;
+	restart)
+		restart
+	;;
+	status)
+		if [ -f /var/lock/jms ]; then
+			echo "$PROG (pid `ps -ef | grep 'fedora_listener' | grep -v 'grep' | awk '{print $2}'`) is running..."
+		else
+			echo "$PROG has not been started."
+		fi
+	;;
+	*)
+
+	echo $"Usage: $PROG {start|stop|restart|status}"
+	exit 3
+esac
+
+exit $RETVAL
