@@ -222,11 +222,7 @@ if __name__ == '__main__':
         if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
             config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
         if os.path.exists(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME})):
-<<<<<<< HEAD
             config.read( os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME}))
-=======
-            config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
->>>>>>> 0d728bec9a5ee1a5ed465e5da5c2b8027f2a32e2
         if os.path.exists(CONFIG_FILE_NAME):
             config.read(CONFIG_FILE_NAME)
             
