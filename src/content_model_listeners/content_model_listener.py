@@ -53,7 +53,7 @@ class ContentModelListener(ConnectionListener):
             # plugin.plugin_object is an instance of the plubin
             logging.info("Loading plugin: %(name)s for content model %(cmodel)s." % {'name': plugin.plugin_object.name, 'cmodel': plugin.plugin_object.content_model})
             plugin.plugin_object.config = config
-            if type(plugin.plugin_object.content_model) == 'str':
+            if type(plugin.plugin_object.content_model).__name__ == 'str':
                 content_models = [plugin.plugin_object.content_model]
             else:
                 content_models = plugin.plugin_object.content_model
@@ -222,7 +222,11 @@ if __name__ == '__main__':
         if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
             config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
         if os.path.exists(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME})):
+<<<<<<< HEAD
             config.read( os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME}))
+=======
+            config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
+>>>>>>> 0d728bec9a5ee1a5ed465e5da5c2b8027f2a32e2
         if os.path.exists(CONFIG_FILE_NAME):
             config.read(CONFIG_FILE_NAME)
             
