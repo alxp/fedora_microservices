@@ -204,31 +204,28 @@ if __name__ == '__main__':
     
     signal.signal(signal.SIGINT, sighandler);
 
-    if os.path.exists(CONFIG_FILE_NAME):
-        config.read(CONFIG_FILE_NAME)
-    if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
-        config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
-    if os.path.exists(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME})):
-        config.read(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME}))
+    parser = OptionParser()
+    
+    parser.add_option('-C', '--config-file', type = 'string', dest = 'configfile', default = CONFIG_FILE_NAME,
+                      help = 'Path of the configuration file for this listener process instance.')
+    
+    (options, args) = parser.parse_args()
+    
+    if os.path.exists(options.configfile):
+        config.read(options.configfile)
+    elif ( len(sys.argv) > 1 and os.path.exists(sys.argv[1]) ):
+        config.read(sys.argv[1])
     
     levels = {'DEBUG':logging.DEBUG, 'INFO': logging.INFO, 'WARNING': logging.WARNING, 'ERROR':logging.ERROR, 'CRITICAL':logging.CRITICAL, 'FATAL':logging.FATAL}
     logging.basicConfig(filename = config.get('Logging', 'log_file'), level = levels[config.get('Logging', 'log_level')])
-
-    parser = OptionParser()
     
-    parser.add_option('-H', '--host', type = 'string', dest = 'host', default = config.get('MessagingServer', 'hostname'),
-                      help = 'Hostname or IP to connect to. Defaults to localhost if not specified.')
-    parser.add_option('-P', '--port', type = int, dest = 'port', default = config.get('MessagingServer', 'port'),
-                      help = 'Port providing stomp protocol connections. Defaults to 61613 if not specified.')
-    parser.add_option('-U', '--user', type = 'string', dest = 'user', default = config.get('MessagingServer', 'username'),
-                      help = 'Username for the connection')
-    parser.add_option('-W', '--password', type = 'string', dest = 'password', default = config.get('MessagingServer', 'password'),
-                      help = 'Password for the connection')
-    parser.add_option('-R', '--fedoraurl', type = 'string', dest = 'fedoraurl', default = config.get('RepositoryServer', 'url'),
-                      help = 'Fedora URL. Defaults to http://localhost:8080/fedora')
+    messaging_host = config.get('MessagingServer', 'hostname')
+    messaging_port = int(config.get('MessagingServer', 'port'))
+    messaging_user = config.get('MessagingServer', 'username')
+    messaging_pass = config.get('MessagingServer', 'password')
+    repository_url = config.get('RepositoryServer', 'url')
     
-    (options, args) = parser.parse_args()
-    sf = StompFedora(options.host, options.port, options.user, options.password, options.fedoraurl)
+    sf = StompFedora(messaging_host, messaging_port, messaging_user, messaging_pass, repository_url)
 
     sf.subscribe('/topic/fedora.apim.update')
 
