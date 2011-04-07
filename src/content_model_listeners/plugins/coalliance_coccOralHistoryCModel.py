@@ -15,7 +15,7 @@ from fedorarelsint import RELSINTDatastream
 from fcrepo.utils import NS
 from fcrepo.connection import FedoraConnectionException
 from lxml import etree
-import logging, os, subprocess, string, httplib, re, random
+import logging, os, subprocess, string, httplib, re, random, types
 
 # thumbnail constants
 tn_postfix = '-tn.jpg'
@@ -53,7 +53,7 @@ def get_handle(obj):
       conn.request('GET', handleServerApp+'debug=true&pid='+obj.pid)
       res = conn.getresponse()
     except:
-      logging.error("Error Connecting")
+      logging.error("Error connecting to Handle Server. PID: %s." % obj.pid)
       return False
 
     # convert the response to lowercase and see if it contains success
@@ -250,32 +250,32 @@ class coalliance_coccOralHistoryCModel(FedoraMicroService):
         self.obj = obj
         self.dsid = dsid
         try:
-
             if dsid == 'MODS':
                 # some functions use the wrong namespace 
                 # determine what to use
                 mods_namespace = '{http://www.loc.gov/mods/v3}'
-                 
+
                 parser = etree.XMLParser(remove_blank_text=True)
                 root = etree.fromstring(obj[MODS].getContent().read(), parser)
-                
-                for k,v in root.nsmap:
-                    if(k.lower == 'mods'):
-                        ns = v
+
+                ns = None
+
+                for k in root.nsmap:
+                    if(type(k) == types.StringType and k.lower().find('mods') != -1):
+                        ns = '{%s}' % root.nsmap[k]
 
                 if ns == None:
                     ns = mods_namespace
 
                 url = root.find(ns+'location/'+ns+'url')
                 if(url == None & get_handle(obj.pid)):
-                    location = root.find(ns1+'location')
+                    location = root.find(ns+'location')
                     if(location == None):
-                        location = etree.SubElement(root, ns1+'location')
-                    url = etree.SubElement(location, ns1+'url')
+                        location = etree.SubElement(root, ns+'location')
+                    url = etree.SubElement(location, ns+'url')
                     url.attrib['usage']='primary display'
-                    url.text = 'http://hdl.handle.net/10176/'+obj.pid
-                    obj['MODS'].setContent(etree.tostring(root))
-
+                    url.text = 'http://hdl.handle.net/10176/'
+                    obj['MODS'].setContent(etree.tostring(root, pretty_print=True))
             else:
                 self.relsint = RELSINTDatastream(obj)
                 self.relationships = self.relsint.getRelationships(dsid)
