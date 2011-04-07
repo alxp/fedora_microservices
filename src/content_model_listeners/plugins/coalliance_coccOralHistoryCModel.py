@@ -53,7 +53,7 @@ def get_handle(obj):
       conn.request('GET', handleServerApp+'debug=true&pid='+obj.pid)
       res = conn.getresponse()
     except:
-      logging.error("Error connecting to Handle Server. PID: %s." % obj.pid)
+      logging.error("Error connecting to Handle Server. PID: %s." % (obj.pid))
       return False
 
     # convert the response to lowercase and see if it contains success
@@ -256,7 +256,7 @@ class coalliance_coccOralHistoryCModel(FedoraMicroService):
                 mods_namespace = '{http://www.loc.gov/mods/v3}'
 
                 parser = etree.XMLParser(remove_blank_text=True)
-                root = etree.fromstring(obj[MODS].getContent().read(), parser)
+                root = etree.fromstring(obj['MODS'].getContent().read(), parser)
 
                 ns = None
 
@@ -268,13 +268,13 @@ class coalliance_coccOralHistoryCModel(FedoraMicroService):
                     ns = mods_namespace
 
                 url = root.find(ns+'location/'+ns+'url')
-                if(url == None & get_handle(obj.pid)):
+                if(url == None and get_handle(obj)):
                     location = root.find(ns+'location')
                     if(location == None):
                         location = etree.SubElement(root, ns+'location')
                     url = etree.SubElement(location, ns+'url')
                     url.attrib['usage']='primary display'
-                    url.text = 'http://hdl.handle.net/10176/'
+                    url.text = 'http://hdl.handle.net/10176/'+obj.pid
                     obj['MODS'].setContent(etree.tostring(root, pretty_print=True))
             else:
                 self.relsint = RELSINTDatastream(obj)
