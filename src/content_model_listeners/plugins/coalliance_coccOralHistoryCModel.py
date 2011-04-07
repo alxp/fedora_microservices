@@ -14,6 +14,7 @@ from datetime import datetime
 from fedorarelsint import RELSINTDatastream
 from fcrepo.utils import NS
 from fcrepo.connection import FedoraConnectionException
+from lxml import etree
 import logging, os, subprocess, string, httplib, re, random
 
 # thumbnail constants
@@ -21,7 +22,7 @@ tn_postfix = '-tn.jpg'
 tn_size = (150, 200)
 
 #handle constants
-handleServer='sword.coalliance.org'
+handleServer='damocles.coalliance.org'
 handleServerPort='9080'
 handleServerApp='/handles/handles.jsp?'
 
@@ -58,7 +59,7 @@ def get_handle(obj):
     # convert the response to lowercase and see if it contains success
     text = string.lower(res.read())
 
-    if ( string.find(text,'success') != -1 ):
+    if ( string.find(text,'==>success') != -1 ):
         return True
     else:
         return False
@@ -249,11 +250,36 @@ class coalliance_coccOralHistoryCModel(FedoraMicroService):
         self.obj = obj
         self.dsid = dsid
         try:
-            self.relsint = RELSINTDatastream(obj)
-            self.relationships = self.relsint.getRelationships(dsid)
 
-            # work on the files based on mimetype
-            self.mimetype_dispatch()
+            if dsid == 'MODS':
+                # some functions use the wrong namespace 
+                # determine what to use
+                mods_namespace = '{http://www.loc.gov/mods/v3}'
+                 
+                parser = etree.XMLParser(remove_blank_text=True)
+                root = etree.fromstring(obj[MODS].getContent().read(), parser)
+                
+                for k,v in root.nsmap:
+                    if(k.lower == 'mods'):
+                        ns = v
+
+                if ns == None:
+                    ns = mods_namespace
+
+                url = root.find(ns+'location/'+ns+'url')
+                if(url == None & get_handle(obj.pid)):
+                    location = root.find(ns1+'location')
+                    if(location == None):
+                        location = etree.SubElement(root, ns1+'location')
+                    url = etree.SubElement(location, ns1+'url')
+                    url.attrib['usage']='primary display'
+                    url.text = 'http://hdl.handle.net/10176/'+obj.pid
+                    obj['MODS'].setContent(etree.tostring(root))
+
+            else:
+                self.relsint = RELSINTDatastream(obj)
+                self.relationships = self.relsint.getRelationships(dsid)
+                self.mimetype_dispatch()
 
             #TODO
             #handle MODS handle stuff 
