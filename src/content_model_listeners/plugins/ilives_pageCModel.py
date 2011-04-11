@@ -91,6 +91,8 @@ class ilives_pageCModel(FedoraMicroService):
             create_jp2(obj, dsid)
             if os.path.exists("%(abbyy)s/CLI" % {'abbyy': abbyy_cli_home}):
                 do_abbyy_ocr(obj, dsid)
+        if dsid == 'ABBYY':
+            transform_abbyy_xml(obj, dsid)
         return 
 
     def __init__(self):
