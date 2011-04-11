@@ -13,6 +13,18 @@ from shutil import rmtree
 import logging, os
 
 abbyy_cli_home = '/usr/local/ABBYYData/FRE80_M5_Linux_part_498-28_build_8-1-0-7030/Samples/CLI/'
+saxon_home = '/opt/Saxon'
+
+def transform_abbyy_xml(obj, dsid):
+    directory, file = get_datastream_as_file(obj, dsid, 'abbyy')
+    r = subprocess.call(["java", "-jar", saxon_home+'/saxon9.jar', '-t', '-s:'+directory+'/'+file, '-xsl:plugins/emic-simple-ABBYY2TEI.xml' , '-o:'+directory+'/'+file+'_tei'])
+    logging.debug(os.listdir(directory))
+    if r == 0:
+        if os.path.exists(txtfile):
+            update_datastream(obj, 'PAGE_TEI', txtfile, label='TEI', mimeType='text/xml')
+    else:
+        logging.error("Error calling saxon" % {'err': r})
+
 
 def do_abbyy_ocr(obj, dsid):
     # Download a datastream as a temp file and get its location and filename.
