@@ -13,5 +13,5 @@ log_level: INFO
 url: http://localhost:8080/fedora
 
 [ContentModels]
-models: ilives:bookCModel, ilives:pageCModel
+models: ilives:bookCModel, ilives:pageCModel, newspapers:pageCModel, newspapers:issueCModel
 
