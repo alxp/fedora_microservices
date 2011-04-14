@@ -22,7 +22,7 @@ setup(name='fedora_micro_services',
       url='http://islandora.ca/',
       long_description=read('README'),
       packages=find_packages('src'),
-      py_modules=['src/fedora_listener/__main__', 'content_model_listener/__main__'],
+      py_modules=['fedora_listener/__main__', 'content_model_listeners/__main__'],
       package_dir = {'': 'src'},
       install_requires=['FeedParser', 'fcrepo', 'stomp.py', 'yapsy'],
      )
