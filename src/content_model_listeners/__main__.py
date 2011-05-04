@@ -280,7 +280,7 @@ if __name__ == '__main__':
     try:
         sf = ContentModelListener(models, messaging_host, messaging_port, messaging_user, messaging_pass, repository_url)
     
-        for model in options.cmodels:
+        for model in models:
             sf.subscribe("/topic/fedora.contentmodel.%s" % (model))
             logging.info("Subscribing to topic /topic/fedora.contentmodel.%(model)s." % {'model': model})
 

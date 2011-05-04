@@ -1,9 +1,12 @@
 Fedora Stomp listener and content model listeners
 
-Authoer: Alexander O'Neill
+Author: Alexander O'Neill
 E-Mail: aoneill@upei.ca
 
-Developed as part of the Islandora project (http://islandora.ca) at the University of Prince Edward Island Robertson Library
+Maintainer: Jonathan Green
+E-Mail: jonathan@discoverygarden.ca
+
+Developed as part of the Islandora project (http://islandora.ca) at the University of Prince Edward Island Robertson Library. Currently maintained by Discovery Garden (discoverygarden.ca).
 
 Installation requirements:
 
@@ -37,7 +40,7 @@ Run fedora_listener.py with the following command-line parameters:
 Copy the file fedora_microservices.cfg.default to fedora_microservices.cfg, and edit it to point to your Fedora repository.
 
 $ cd fedora_microservices/src
-$ python fedora_listener /path/to/fedora_microservices.cfg
+$ python fedora_listener -C /path/to/fedora_microservices.cfg
 
 This will tell the script to connect to the Stomp port on the server specified in the configuration file and listen for messages on the topic /topic/fedora.apim.update.  The script then determines the content models that the modified object subscribes to and re-sends the body of the message (in Fedora Atom format) out to new topics for each content model.
 
@@ -54,6 +57,10 @@ hostname: localhost
 port: 61613
 username: fedoraAdmin
 password: fedoraAdmin
+
+[Reconnect]
+tries: 5
+wait: 10
 
 [Logging]
 log_file: content_model_listener.log
@@ -72,7 +79,7 @@ This is identical to the config file for fedora_listener.cfg, with the addition 
 You can then run the script as:
 
 $ cd fedora_microservices/src
-$ python content_model_listener /path/to/content_model_listener.cfg 
+$ python content_model_listener -C /path/to/content_model_listener.cfg 
 
 The content models you specify in the config file will be the only ones this instance of the content_model_listener.py script will pay attention to.  So you can have one instance of the script on your ABBYY FineReader server that only does OCR tasks and another instance of the script running on a different server that can do tasks like generating thumbnails, compressed JP2 images, etc. or any other task that doesn't need to be run on a specific server.
 
