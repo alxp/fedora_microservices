@@ -3,12 +3,12 @@ Created on 2010-07-20
 
 @author: al
 '''
-import fcrepo.connection, time, ConfigParser, sys, feedparser, logging, os, signal
+import fcrepo.connection, time, ConfigParser, sys, feedparser, logging, os, signal, types
 from stomp.connect import Connection
 from stomp.listener import ConnectionListener, StatsListener
 from fcrepo.client import FedoraClient
 from fcrepo.utils import NS
-from stomp.exception import NotConnectedException
+from stomp.exception import NotConnectedException, ReconnectFailedException
 from optparse import OptionParser
 from categories import FedoraMicroService
 from yapsy.PluginManager import PluginManager
@@ -37,7 +37,9 @@ class ContentModelListener(ConnectionListener):
         logging.info("Connecting to Fedora server at %(url)s" % {'url': fedora_url})
         self.fc = fcrepo.connection.Connection(fedora_url, username = user, password = passcode)
         self.client = FedoraClient(self.fc)
-        
+        self.fedora_url = fedora_url
+        self.username = user
+        self.password = passcode
         
         # Create plugin manager
         self.manager = PluginManager(categories_filter = {"FedoraMicroService": FedoraMicroService})
@@ -53,7 +55,7 @@ class ContentModelListener(ConnectionListener):
             # plugin.plugin_object is an instance of the plubin
             logging.info("Loading plugin: %(name)s for content model %(cmodel)s." % {'name': plugin.plugin_object.name, 'cmodel': plugin.plugin_object.content_model})
             plugin.plugin_object.config = config
-            if type(plugin.plugin_object.content_model).__name__ == 'str':
+            if type(plugin.plugin_object.content_model) == types.StringType:
                 content_models = [plugin.plugin_object.content_model]
             else:
                 content_models = plugin.plugin_object.content_model
@@ -83,6 +85,8 @@ class ContentModelListener(ConnectionListener):
         """
         \see ConnectionListener::on_disconnected
         """
+        logging.error("lost connection reconnect in %d sec..." % reconnect_wait)
+        signal.alarm(reconnect_wait)
         
     def on_message(self, headers, body):
         """
@@ -203,18 +207,45 @@ class ContentModelListener(ConnectionListener):
             Remove an existing subscription - so that the client no longer receives messages from that destination.
         """
         self.conn.unsubscribe(destination)
+
+    def connect(self):
+        self.conn.start()
+        self.fc = fcrepo.connection.Connection(self.fedora_url, username = self.username, password = self.password)
+        self.client = FedoraClient(self.fc)
         
-def sighandler(signum, frame):
+
+def reconnect_handler(signum, frame):
+    global attempts
+    try:
+        logging.info("Attempt %d of %d." % (attempts+1, reconnect_max_attempts))
+        sf.connect()
+        logging.info("Reconnected.")
+        for model in options.cmodels:
+            sf.subscribe("/topic/fedora.contentmodel.%s" % (model))
+            logging.info("Subscribing to topic /topic/fedora.contentmodel.%(model)s." % {'model': model})
+        attempts = 0
+        signal.pause()
+
+    except ReconnectFailedException:
+        attempts = attempts + 1
+        if(attempts == reconnect_max_attempts):
+            logging.info("Unable to reconnect, shutting down")
+            sys.exit(1)
+        else:
+            signal.alarm(reconnect_wait)
+            signal.pause()
+        
+def shutdown_handler(signum, frame):
     sf.disconnect('');
     sys.exit(0);
 
 if __name__ == '__main__':
-    config = ConfigParser.ConfigParser({'hostname': 'localhost', 'port': '61613', 'username': 'fedoraAdmin', 'password': 'fedoraAdmin',
-                                                      'log_file': 'fedora_listener.log', 'log_level': 'INFO',
-                                                      'url': 'http://localhost:8080/fedora',
-                                                      'models': ''})
+    config = ConfigParser.ConfigParser()
 
-    signal.signal(signal.SIGINT, sighandler)
+    # register handlers so we properly disconnect and reconnect
+    signal.signal(signal.SIGINT, shutdown_handler)
+    signal.signal(signal.SIGTERM, shutdown_handler)
+    signal.signal(signal.SIGALRM, reconnect_handler)
 
     if( len(sys.argv) > 1 and os.path.exists(sys.argv[1]) ):
         config.read(sys.argv[1])
@@ -225,10 +256,19 @@ if __name__ == '__main__':
             config.read( os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME}))
         if os.path.exists(CONFIG_FILE_NAME):
             config.read(CONFIG_FILE_NAME)
+
+    #defined for the reconnect handler above
+    attempts = 0
+    reconnect_attempts = 0
+    reconnect_max_attempts = int(config.get('Reconnect', 'tries'))
+    reconnect_wait = int(config.get('Reconnect', 'wait'))
             
     log_filename = config.get('Logging', 'log_file')
     levels = {'DEBUG':logging.DEBUG, 'INFO': logging.INFO, 'WARNING': logging.WARNING, 'ERROR':logging.ERROR, 'CRITICAL':logging.CRITICAL, 'FATAL':logging.FATAL}
-    logging.basicConfig(filename = log_filename, level = levels[config.get('Logging', 'log_level')])
+    logging_format = '%(asctime)s : %(levelname)s : %(name)s : %(message)s'
+    date_format = '(%m/%d/%y)%H:%M:%S'
+    logging.basicConfig(filename = log_filename, level = levels[config.get('Logging', 'log_level')], format=logging_format, datefmt=date_format)
+
     parser = OptionParser()
     models = [v.strip() for v in config.get('ContentModels', 'models').split(',')]
 
@@ -245,12 +285,19 @@ if __name__ == '__main__':
     parser.add_option('-R', '--fedoraurl', type = 'string', dest = 'fedoraurl', default = config.get('RepositoryServer', 'url'),
                       help = 'Fedora URL. Defaults to http://localhost:8080/fedora')
     (options, args) = parser.parse_args()
-    sf = ContentModelListener(options.cmodels, options.host, options.port, options.user, options.password, options.fedoraurl)
-    
-    if not options.cmodels:
-        options.cmodels = models
-    for model in options.cmodels:
-        sf.subscribe("/topic/fedora.contentmodel.%s" % (model))
-        logging.info("Subscribing to topic /topic/fedora.contentmodel.%(model)s." % {'model': model})
 
-    signal.pause()
+    try:
+        sf = ContentModelListener(options.cmodels, options.host, options.port, options.user, options.password, options.fedoraurl)
+    
+        if not options.cmodels:
+            options.cmodels = models
+        for model in options.cmodels:
+            sf.subscribe("/topic/fedora.contentmodel.%s" % (model))
+            logging.info("Subscribing to topic /topic/fedora.contentmodel.%(model)s." % {'model': model})
+
+        # keep this thread alive waiting for a signal
+        signal.pause()
+
+    except ReconnectFailedException:
+        logging.info('Failed to connect to server: %s:%d' % (options.host,options.port))
+        print 'Failed to connect to server: %s:%d' % (options.host, options.port)

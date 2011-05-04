@@ -1,15 +1,8 @@
-'''
-Created on 2010-07-12
-
-@author: Alexander O'Neill
-'''
-
-
 import signal, sys, time, ConfigParser, feedparser, logging, fcrepo.connection, os
 from optparse import OptionParser
 from stomp.connect import Connection
 from stomp.listener import ConnectionListener, StatsListener
-from stomp.exception import NotConnectedException
+from stomp.exception import NotConnectedException, ReconnectFailedException
 from fcrepo.client import FedoraClient
 from fcrepo.utils import NS
 
@@ -29,6 +22,10 @@ class StompFedora(ConnectionListener):
         self.transaction_id = None
         self.fc = fcrepo.connection.Connection(fedora_url, username = user, password = passcode)
         self.client = FedoraClient(self.fc)
+
+        self.fedora_url = fedora_url
+        self.user = user
+        self.password = passcode
         
     def __print_async(self, frame_type, headers, body):
         """
@@ -60,7 +57,8 @@ class StompFedora(ConnectionListener):
         """
         \see ConnectionListener::on_disconnected
         """
-        sysout("lost connection")
+        logging.error("lost connection reconnect in %d sec..." % reconnect_wait)
+        signal.alarm(reconnect_wait)
         
     def on_message(self, headers, body):
         """
@@ -148,7 +146,7 @@ class StompFedora(ConnectionListener):
             self.conn.commit(transaction=self.transaction_id)
             self.transaction_id = None
     
-    def disconnect(self, args):
+    def disconnect(self, args=None):
         """
         Description:
             Gracefully disconnect from the server.
@@ -182,6 +180,11 @@ class StompFedora(ConnectionListener):
             header indicating which destination to subscribe to.  The ack parameter is optional, and defaults to auto.
         """
         self.conn.subscribe(destination=destination, ack=ack)
+
+    def connect(self):
+        self.conn.start()
+        self.fc = fcrepo.connection.Connection(self.fedora_url, username = self.user, password = self.password)
+        self.client = FedoraClient(self.fc)
         
     def unsubscribe(self, destination):
         """
@@ -193,16 +196,38 @@ class StompFedora(ConnectionListener):
         """
         self.conn.unsubscribe(destination)
 
-def sighandler(signum, frame):
-    sf.disconnect('');
-    sys.exit(0);
+def reconnect_handler(signum, frame):
+    global attempts
+    try:
+        logging.info("Attempt %d of %d." % (attempts+1, reconnect_max_attempts))
+        sf.connect()
+        sf.subscribe('/topic/fedora.apim.update')
+        logging.info("Reconnected.")
+        attempts = 0
+        signal.pause()
+
+    except ReconnectFailedException:
+        attempts = attempts + 1
+        if(attempts == reconnect_max_attempts):
+            logging.info("Unable to reconnect, shutting down")
+        else:
+            signal.alarm(reconnect_wait)
+            signal.pause()
+            
+            
+def shutdown_handler(signum, frame):
+    sf.disconnect()
+    logging.info('Shutting down')
+    sys.exit(0)
+    
 
 if __name__ == '__main__':
-    config = ConfigParser.ConfigParser({'hostname': 'localhost', 'port': '61613', 'username': 'fedoraAdmin', 'password': 'fedoraAdmin',
-                                                      'log_file': 'fedora_listener.log', 'log_level': 'INFO',
-                                                      'url': 'http://localhost:8080/fedora'})
-    
-    signal.signal(signal.SIGINT, sighandler);
+    config = ConfigParser.ConfigParser()
+
+    # register handlers so we properly disconnect and reconnect
+    signal.signal(signal.SIGINT, shutdown_handler)
+    signal.signal(signal.SIGTERM, shutdown_handler)
+    signal.signal(signal.SIGALRM, reconnect_handler)
 
     if os.path.exists(CONFIG_FILE_NAME):
         config.read(CONFIG_FILE_NAME)
@@ -211,8 +236,16 @@ if __name__ == '__main__':
     if os.path.exists(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME})):
         config.read(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME}))
     
+    #defined for the reconnect handler above
+    attempts = 0
+    reconnect_attempts = 0
+    reconnect_max_attempts = int(config.get('Reconnect', 'tries'))
+    reconnect_wait = int(config.get('Reconnect', 'wait'))
+
     levels = {'DEBUG':logging.DEBUG, 'INFO': logging.INFO, 'WARNING': logging.WARNING, 'ERROR':logging.ERROR, 'CRITICAL':logging.CRITICAL, 'FATAL':logging.FATAL}
-    logging.basicConfig(filename = config.get('Logging', 'log_file'), level = levels[config.get('Logging', 'log_level')])
+    logging_format = '%(asctime)s : %(levelname)s : %(name)s : %(message)s'
+    date_format = '(%m/%d/%y)%H:%M:%S'
+    logging.basicConfig(filename = config.get('Logging', 'log_file'), level = levels[config.get('Logging', 'log_level')], format=logging_format, datefmt=date_format)
 
     parser = OptionParser()
     
@@ -228,8 +261,14 @@ if __name__ == '__main__':
                       help = 'Fedora URL. Defaults to http://localhost:8080/fedora')
     
     (options, args) = parser.parse_args()
-    sf = StompFedora(options.host, options.port, options.user, options.password, options.fedoraurl)
+    
+    try:
+        sf = StompFedora(options.host, options.port, options.user, options.password, options.fedoraurl)
+        sf.subscribe('/topic/fedora.apim.update')
+        # keep this thread alive waiting for a signal
+        signal.pause();
+    except ReconnectFailedException:
+        logging.info('Failed to connect to server: %s:%d' % (options.host,options.port))
+        print 'Failed to connect to server: %s:%d' % (options.host, options.port)
+        
 
-    sf.subscribe('/topic/fedora.apim.update')
-
-    signal.pause();

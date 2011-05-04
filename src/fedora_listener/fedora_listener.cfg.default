@@ -4,6 +4,12 @@ port: 61613
 username: fedoraAdmin
 password: fedoraAdmin
 
+; if we are disconnected from the messaging server we try to reconnect
+; [tries] times waiting [wait] seconds between attempts
+[Reconnect]
+tries: 5
+wait: 10
+
 [Logging]
 log_file: fedora_listener.log
 ;Supported levels are DEBUG, INFO, WARNING, ERROR, CRITICAL
