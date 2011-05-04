@@ -36,13 +36,14 @@ Run fedora_listener.py with the following command-line parameters:
 
 Copy the file fedora_microservices.cfg.default to fedora_microservices.cfg, and edit it to point to your Fedora repository.
 
-$ python fedora_listener.py 
+$ cd fedora_microservices/src
+$ python fedora_listener /path/to/fedora_microservices.cfg
 
 This will tell the script to connect to the Stomp port on the server specified in the configuration file and listen for messages on the topic /topic/fedora.apim.update.  The script then determines the content models that the modified object subscribes to and re-sends the body of the message (in Fedora Atom format) out to new topics for each content model.
 
 For example, if an object with content model islandora:strict_pdf is updated, fedora_listener will receive the update message and send out a new message on the topic "/topic/fedora.contentmodel.islandora:strict_pdf".
 
-contnet_model_listeners:
+content_model_listeners:
 
 The content model listener can be run on the same host or on different or multiple other hosts.  You should only specify the content models you are interested in acting on in the specific instance of the script.  
 
@@ -70,7 +71,8 @@ This is identical to the config file for fedora_listener.cfg, with the addition 
 
 You can then run the script as:
 
-$ python content_model_listener.py 
+$ cd fedora_microservices/src
+$ python content_model_listener /path/to/content_model_listener.cfg 
 
 The content models you specify in the config file will be the only ones this instance of the content_model_listener.py script will pay attention to.  So you can have one instance of the script on your ABBYY FineReader server that only does OCR tasks and another instance of the script running on a different server that can do tasks like generating thumbnails, compressed JP2 images, etc. or any other task that doesn't need to be run on a specific server.
 

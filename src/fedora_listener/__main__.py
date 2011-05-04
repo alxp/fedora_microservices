@@ -229,12 +229,19 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, shutdown_handler)
     signal.signal(signal.SIGALRM, reconnect_handler)
 
-    if os.path.exists(CONFIG_FILE_NAME):
-        config.read(CONFIG_FILE_NAME)
-    if os.path.exists('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME}):
-        config.read('/etc/%(conf)s' % {'conf': CONFIG_FILE_NAME})
-    if os.path.exists(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME})):
-        config.read(os.path.expanduser('~/.fedora_microservices/%(conf)s' % {'conf': CONFIG_FILE_NAME}))
+    parser = OptionParser()
+    
+    parser.add_option('-C', '--config-file', type = 'string', dest = 'configfile', default = CONFIG_FILE_NAME,
+                      help = 'Path of the configuration file for this listener process instance.')
+    
+    (options, args) = parser.parse_args()
+    
+    if os.path.exists(options.configfile):
+        config.read(options.configfile)
+    else:
+        print 'Config file %s not found!' % options.configfile
+        sys.exit(-1)
+
     
     #defined for the reconnect handler above
     attempts = 0
@@ -246,29 +253,18 @@ if __name__ == '__main__':
     logging_format = '%(asctime)s : %(levelname)s : %(name)s : %(message)s'
     date_format = '(%m/%d/%y)%H:%M:%S'
     logging.basicConfig(filename = config.get('Logging', 'log_file'), level = levels[config.get('Logging', 'log_level')], format=logging_format, datefmt=date_format)
-
-    parser = OptionParser()
     
-    parser.add_option('-H', '--host', type = 'string', dest = 'host', default = config.get('MessagingServer', 'hostname'),
-                      help = 'Hostname or IP to connect to. Defaults to localhost if not specified.')
-    parser.add_option('-P', '--port', type = int, dest = 'port', default = config.get('MessagingServer', 'port'),
-                      help = 'Port providing stomp protocol connections. Defaults to 61613 if not specified.')
-    parser.add_option('-U', '--user', type = 'string', dest = 'user', default = config.get('MessagingServer', 'username'),
-                      help = 'Username for the connection')
-    parser.add_option('-W', '--password', type = 'string', dest = 'password', default = config.get('MessagingServer', 'password'),
-                      help = 'Password for the connection')
-    parser.add_option('-R', '--fedoraurl', type = 'string', dest = 'fedoraurl', default = config.get('RepositoryServer', 'url'),
-                      help = 'Fedora URL. Defaults to http://localhost:8080/fedora')
-    
-    (options, args) = parser.parse_args()
+    messaging_host = config.get('MessagingServer', 'hostname')
+    messaging_port = int(config.get('MessagingServer', 'port'))
+    messaging_user = config.get('MessagingServer', 'username')
+    messaging_pass = config.get('MessagingServer', 'password')
+    repository_url = config.get('RepositoryServer', 'url')
     
     try:
-        sf = StompFedora(options.host, options.port, options.user, options.password, options.fedoraurl)
+        sf = StompFedora(messaging_host, messaging_port, messaging_user, messaging_pass, repository_url)
         sf.subscribe('/topic/fedora.apim.update')
         # keep this thread alive waiting for a signal
         signal.pause();
     except ReconnectFailedException:
         logging.info('Failed to connect to server: %s:%d' % (options.host,options.port))
         print 'Failed to connect to server: %s:%d' % (options.host, options.port)
-        
-
