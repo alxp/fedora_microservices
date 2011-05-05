@@ -15,14 +15,18 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name='fedora_micro_services',
-      version='0.1',
+      version='0.2',
       description='Fedora Stomp Listener',
       author='Alexander O''Neill',
       author_email='aoneill@upei.ca',
+      maintainer='Jonathan Green',
+      maintainer_email='jonathan@discoverygarden.ca',
       url='http://islandora.ca/',
       long_description=read('README'),
       packages=find_packages('src'),
       py_modules=['fedora_listener/__main__', 'content_model_listeners/__main__'],
       package_dir = {'': 'src'},
+      package_data = {'content_model_listeners':['plugins/*']},
+      #data_files=[('/etc/init.d', ['fedora_microservices'])]
       install_requires=['FeedParser', 'fcrepo', 'stomp.py', 'yapsy'],
      )
