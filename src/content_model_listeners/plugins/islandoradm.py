@@ -12,19 +12,23 @@ from shutil import rmtree
 import logging, os
 
 abby_home = '/usr/local/ABBYYData/FRE80_M5_Linux_part_498-28_build_8-1-0-7030/Samples/CLI/'
+kdu_compress = '/usr/local/bin/kdu_compress'
+convert = '/usr/bin/convert'
 
 def sysout(msg, end='\n'):
     sys.stdout.write(str(msg) + end)
 
 def make_jp2(tiff_file):
-    return 0 == subprocess.call(["kdu_compress", "-i", tiff_file, "-o", "tmp.jp2", "-rate", "0.5", "Clayers=1", "Clevels=7", "Cprecincts={256,256},{256,256},{256,256},{128,128},{128,128},{64,64},{64,64},{32,32},{16,16}", "Corder=RPCL", "ORGgen_plt=yes", "ORGtparts=R", "Cblk={32,32}", "Cuse_sop=yes"])
+    logging.debug([kdu_compress, "-i", tiff_file, "-o", "tmp.jp2", "-rate", "0.5", "Clayers=1", "Clevels=7", "Cprecincts={256,256},{256,256},{256,256},{128,128},{128,128},{64,64},{64,64},{32,32},{16,16}", "Corder=RPCL", "ORGgen_plt=yes", "ORGtparts=R", "Cblk={32,32}", "Cuse_sop=yes"])
+
+    return 0 == subprocess.call([kdu_compress, "-i", tiff_file, "-o", "tmp.jp2", "-rate", "0.5", "Clayers=1", "Clevels=7", "Cprecincts={256,256},{256,256},{256,256},{128,128},{128,128},{64,64},{64,64},{32,32},{16,16}", "Corder=RPCL", "ORGgen_plt=yes", "ORGtparts=R", "Cblk={32,32}", "Cuse_sop=yes"])
     
 def make_jp2_lossless(tiff_file):
-    return 0 == subprocess.call(["kdu_compress", "-i", tiff_file, "-o", "tmp_lossless.jp2", "-rate", "-,0.5", "Clayers=2", "Creversible=yes", "Clevels=8", "Cprecincts={256,256},{256,256},{128,128}", "Corder=RPCL", "ORGgen_plt=yes", "ORGtparts=R", "Cblk={32,32}"])
+    return 0 == subprocess.call([kdu_compress, "-i", tiff_file, "-o", "tmp_lossless.jp2", "-rate", "-,0.5", "Clayers=2", "Creversible=yes", "Clevels=8", "Cprecincts={256,256},{256,256},{128,128}", "Corder=RPCL", "ORGgen_plt=yes", "ORGtparts=R", "Cblk={32,32}"])
 
 def make_tn(tiff_file):
     # would like 85x110^ instead of 85x110!, but need imagemagick upgrade first ( >= 6.3.8-2)
-    return 0 == subprocess.call(["convert", tiff_file, "-thumbnail", "85x110!", "-gravity", "center", "-extent", "85x110", "tmp.jpg"])
+    return 0 == subprocess.call([convert, tiff_file, "-thumbnail", "85x110!", "-gravity", "center", "-extent", "85x110", "tmp.jpg"])
     
 def make_ocr(directory, tiff_file):
     global abby_home
@@ -38,19 +42,27 @@ def run_conversions(obj, tmpdir, tiff_file):
     if not make_tn(tiff_file):
         logging.error("error creating thumbnail for " + obj.pid)
         return False
+
+    logging.debug("finished jpg for " + obj.pid)
     
     if not make_jp2(tiff_file):
         logging.error("error creating jp2 for " + obj.pid)
         return False
     
+    logging.debug("finished jp2 lossy for " + obj.pid)
+    
     if not make_jp2_lossless(tiff_file):
         logging.error("error creating lossless jp2 for " + obj.pid)
         return False
+    
+    logging.debug("finished jp2 lossless for " + obj.pid)
     
     if not make_ocr(tmpdir, tiff_file):
         logging.error("error creating ocr output for " + obj.pid)
         return False
 
+    logging.debug("finished abbyy for " + obj.pid)
+    
     return True
 
 def update_fedora(obj, tmpdir):
