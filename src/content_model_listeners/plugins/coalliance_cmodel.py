@@ -179,7 +179,7 @@ def check_dates(obj, dsid, derivativeid):
     else:
         return False
 
-class coalliance_coccOralHistoryCModel(FedoraMicroService):
+class coalliance_cmodel(FedoraMicroService):
     name = "Coalliance Oral History Cmodel"
     content_model =  ['codearl:codearlBasicObject', 'coccc:cocccBasicObject', 'cog:cogBasicObject', 'cogru:cogruBasicObject', 'wyu:wyuBasicObject', 'codu:coduBasicObject', 'codr:codrBasicObject', 'cogjm:cogjmBasicObject', 'co:coBasicObject', 'cowjcpl:cowjcplBasicObject', 'gopig:gopigBasicObject', 'coccc:cocccBasicETD', 'cog:cogBasicETD', 'cogru:cogruBasicETD', 'wyu:wyuBasicETD', 'codu:coduBasicETD', 'codr:codrBasicETD', 'cogjm:cogjmBasicETD', 'codr:codrBasicVRA', 'co:coPublications']
 
