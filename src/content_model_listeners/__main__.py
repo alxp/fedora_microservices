@@ -45,6 +45,7 @@ class ContentModelListener(ConnectionListener):
         self.manager = PluginManager(categories_filter = {"FedoraMicroService": FedoraMicroService})
         plugin_path = os.path.dirname(__file__)
         self.manager.setPluginPlaces([plugin_path + "/plugins"])
+        logging.debug("Plugin path: " + plugin_path + "/plugins")
         
         # Load plugins.
         self.manager.locatePlugins()
