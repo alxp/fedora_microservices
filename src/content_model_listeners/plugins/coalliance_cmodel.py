@@ -24,7 +24,7 @@ tn_size = (150, 200)
 #handle constants
 handleServer='damocles.coalliance.org'
 handleServerPort='9080'
-handleServerApp='/handles/handles.jsp?'
+handleServerApp='/handles/handle.jsp?'
 
 def mangle_dsid(dsid):
     find = '[^a-zA-Z0-9\.\_\-]';
@@ -50,7 +50,7 @@ def mangle_dsid(dsid):
 def get_handle(obj):
     try:
       conn = httplib.HTTPConnection(handleServer,handleServerPort,timeout=10)
-      conn.request('GET', handleServerApp+'debug=true&pid='+obj.pid)
+      conn.request('GET', handleServerApp+'debug=true&adr3=true&pid='+obj.pid)
       res = conn.getresponse()
     except:
       logging.error("Error connecting to Handle Server. PID: %s." % (obj.pid))
@@ -60,8 +60,10 @@ def get_handle(obj):
     text = string.lower(res.read())
 
     if ( string.find(text,'==>success') != -1 ):
+        logging.info("Successfuly created handle for %s." % obj.pid)
         return True
     else:
+        logging.info("Failed to create handle for %s." % obj.pid)
         return False
 
 def create_thumbnail(obj, dsid, tnid):
@@ -181,7 +183,7 @@ def check_dates(obj, dsid, derivativeid):
 
 class coalliance_cmodel(FedoraMicroService):
     name = "Coalliance Oral History Cmodel"
-    content_model =  ['codearl:codearlBasicObject', 'coccc:cocccBasicObject', 'cog:cogBasicObject', 'cogru:cogruBasicObject', 'wyu:wyuBasicObject', 'codu:coduBasicObject', 'codr:codrBasicObject', 'cogjm:cogjmBasicObject', 'co:coBasicObject', 'cowjcpl:cowjcplBasicObject', 'gopig:gopigBasicObject', 'coccc:cocccBasicETD', 'cog:cogBasicETD', 'cogru:cogruBasicETD', 'wyu:wyuBasicETD', 'codu:coduBasicETD', 'codr:codrBasicETD', 'cogjm:cogjmBasicETD', 'codr:codrBasicVRA', 'co:coPublications']
+    content_model =  ['codearl:codearlBasicObject', 'coccc:cocccBasicObject', 'cog:cogBasicObject', 'cogru:cogruBasicObject', 'wyu:wyuBasicObject', 'codu:coduBasicObject', 'codr:codrBasicObject', 'cogjm:cogjmBasicObject', 'co:coBasicObject', 'cowjcpl:cowjcplBasicObject', 'gopig:gopigBasicObject', 'coccc:cocccBasicETD', 'cog:cogBasicETD', 'cogru:cogruBasicETD', 'wyu:wyuBasicETD', 'codu:coduBasicETD', 'codr:codrBasicETD', 'cogjm:cogjmBasicETD', 'codr:codrBasicVRA', 'co:coPublications', 'codearl:coPublications']
 
     # general derivative function
     def create_derivative(self, relationship, postfix, function):
