@@ -14,16 +14,17 @@ from datetime import datetime
 from fedorarelsint import RELSINTDatastream
 from fcrepo.utils import NS
 from fcrepo.connection import FedoraConnectionException
-import logging, os, subprocess, string, httplib, re, random
+from lxml import etree
+import logging, os, subprocess, string, httplib, re, random, types
 
 # thumbnail constants
 tn_postfix = '-tn.jpg'
 tn_size = (150, 200)
 
 #handle constants
-handleServer='sword.coalliance.org'
+handleServer='damocles.coalliance.org'
 handleServerPort='9080'
-handleServerApp='/handles/handles.jsp?'
+handleServerApp='/handles/handle.jsp?'
 
 def mangle_dsid(dsid):
     find = '[^a-zA-Z0-9\.\_\-]';
@@ -49,18 +50,20 @@ def mangle_dsid(dsid):
 def get_handle(obj):
     try:
       conn = httplib.HTTPConnection(handleServer,handleServerPort,timeout=10)
-      conn.request('GET', handleServerApp+'debug=true&pid='+obj.pid)
+      conn.request('GET', handleServerApp+'debug=true&adr3=true&pid='+obj.pid)
       res = conn.getresponse()
     except:
-      logging.error("Error Connecting")
+      logging.error("Error connecting to Handle Server. PID: %s." % (obj.pid))
       return False
 
     # convert the response to lowercase and see if it contains success
     text = string.lower(res.read())
 
-    if ( string.find(text,'success') != -1 ):
+    if ( string.find(text,'==>success') != -1 ):
+        logging.info("Successfuly created handle for %s." % obj.pid)
         return True
     else:
+        logging.info("Failed to create handle for %s." % obj.pid)
         return False
 
 def create_thumbnail(obj, dsid, tnid):
@@ -178,9 +181,9 @@ def check_dates(obj, dsid, derivativeid):
     else:
         return False
 
-class coalliance_coccOralHistoryCModel(FedoraMicroService):
+class coalliance_cmodel(FedoraMicroService):
     name = "Coalliance Oral History Cmodel"
-    content_model =  ['codearl:codearlBasicObject', 'coccc:cocccBasicObject', 'cog:cogBasicObject', 'cogru:cogruBasicObject', 'wyu:wyuBasicObject', 'codu:coduBasicObject', 'codr:codrBasicObject', 'cogjm:cogjmBasicObject', 'co:coBasicObject', 'cowjcpl:cowjcplBasicObject', 'gopig:gopigBasicObject', 'coccc:cocccBasicETD', 'cog:cogBasicETD', 'cogru:cogruBasicETD', 'wyu:wyuBasicETD', 'codu:coduBasicETD', 'codr:codrBasicETD', 'cogjm:cogjmBasicETD', 'codr:codrBasicVRA', 'co:coPublications']
+    content_model =  ['codearl:codearlBasicObject', 'coccc:cocccBasicObject', 'cog:cogBasicObject', 'cogru:cogruBasicObject', 'wyu:wyuBasicObject', 'codu:coduBasicObject', 'codr:codrBasicObject', 'cogjm:cogjmBasicObject', 'co:coBasicObject', 'cowjcpl:cowjcplBasicObject', 'gopig:gopigBasicObject', 'coccc:cocccBasicETD', 'cog:cogBasicETD', 'cogru:cogruBasicETD', 'wyu:wyuBasicETD', 'codu:coduBasicETD', 'codr:codrBasicETD', 'cogjm:cogjmBasicETD', 'codr:codrBasicVRA', 'co:coPublications', 'codearl:coPublications']
 
     # general derivative function
     def create_derivative(self, relationship, postfix, function):
@@ -249,11 +252,36 @@ class coalliance_coccOralHistoryCModel(FedoraMicroService):
         self.obj = obj
         self.dsid = dsid
         try:
-            self.relsint = RELSINTDatastream(obj)
-            self.relationships = self.relsint.getRelationships(dsid)
+            if dsid == 'MODS':
+                # some functions use the wrong namespace 
+                # determine what to use
+                mods_namespace = '{http://www.loc.gov/mods/v3}'
 
-            # work on the files based on mimetype
-            self.mimetype_dispatch()
+                parser = etree.XMLParser(remove_blank_text=True)
+                root = etree.fromstring(obj['MODS'].getContent().read(), parser)
+
+                ns = None
+
+                for k in root.nsmap:
+                    if(type(k) == types.StringType and k.lower().find('mods') != -1):
+                        ns = '{%s}' % root.nsmap[k]
+
+                if ns == None:
+                    ns = mods_namespace
+
+                url = root.find(ns+'location/'+ns+'url')
+                if(url == None and get_handle(obj)):
+                    location = root.find(ns+'location')
+                    if(location == None):
+                        location = etree.SubElement(root, ns+'location')
+                    url = etree.SubElement(location, ns+'url')
+                    url.attrib['usage']='primary display'
+                    url.text = 'http://hdl.handle.net/10176/'+obj.pid
+                    obj['MODS'].setContent(etree.tostring(root, pretty_print=True))
+            else:
+                self.relsint = RELSINTDatastream(obj)
+                self.relationships = self.relsint.getRelationships(dsid)
+                self.mimetype_dispatch()
 
             #TODO
             #handle MODS handle stuff 

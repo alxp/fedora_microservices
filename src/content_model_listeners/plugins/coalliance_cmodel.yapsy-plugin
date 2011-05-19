@@ -1,9 +1,9 @@
 [Core]
 Name = Coalliance oral history content model
-Module = coalliance_coccOralHistoryCModel
+Module = coalliance_cmodel
 
 [Documentation]
 Author = Jonathan Green
-Version = 0.1
+Version = 0.2
 Website = http://discoverygarden.ca/
-Description = does... stuff
+Description = Listener for Coalliance. Transforms based on mimetype.
