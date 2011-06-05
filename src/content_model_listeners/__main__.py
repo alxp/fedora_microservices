@@ -112,11 +112,16 @@ class ContentModelListener(ConnectionListener):
         \see ConnectionListener::on_error
         """
         self.__print_async("ERROR", headers, body)
+        logging.error("Error reported by stomp. Disconnect and try again.")
+        self.disconnect('')
+        signal.alarm(reconnect_wait)
         
     def on_connected(self, headers, body):
         """
         \see ConnectionListener::on_connected
         """
+        global attempts
+        attempts = 0
         self.__print_async("CONNECTED", headers, body)
   
         
@@ -221,10 +226,9 @@ def reconnect_handler(signum, frame):
         logging.info("Attempt %d of %d." % (attempts+1, reconnect_max_attempts))
         sf.connect()
         logging.info("Reconnected.")
-        for model in options.cmodels:
+        for model in models:
             sf.subscribe("/topic/fedora.contentmodel.%s" % (model))
             logging.info("Subscribing to topic /topic/fedora.contentmodel.%(model)s." % {'model': model})
-        attempts = 0
         signal.pause()
 
     except ReconnectFailedException:
