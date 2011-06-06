@@ -3,7 +3,7 @@ Created on 2010-07-20
 
 @author: al
 '''
-import fcrepo.connection, time, ConfigParser, sys, feedparser, logging, os, signal, types
+import fcrepo.connection, time, ConfigParser, sys, feedparser, logging, os, signal, types, threading
 from stomp.connect import Connection
 from stomp.listener import ConnectionListener, StatsListener
 from fcrepo.client import FedoraClient
@@ -103,9 +103,11 @@ class ContentModelListener(ConnectionListener):
             if content_model in self.contentModels:
                 logging.info('Running rules for %(pid)s from %(cmodel)s.' % {'pid': obj.pid, 'cmodel': content_model} )
                 for plugin in self.contentModels[content_model]: 
-                   plugin.runRules(obj, dsid, body)
+                    plugin.runRules(obj, dsid, body)
         except FedoraConnectionException:
             logging.warning('Object %s was not found.' % (pid))
+        except:
+            logging.exception('Uncaught exception in plugin!')
 
     def on_error(self, headers, body):
         """
@@ -244,6 +246,12 @@ def shutdown_handler(signum, frame):
     sf.disconnect('');
     sys.exit(0);
 
+def stomp_handler(signum, frame):
+    if(stompthread.is_alive()):
+        signal.pause()
+    else:
+        sys.exit(-1);
+
 if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
     parser = OptionParser()
@@ -262,6 +270,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
     signal.signal(signal.SIGALRM, reconnect_handler)
+    signal.signal(signal.SIGVTALRM, stomp_handler)
 
     #defined for the reconnect handler above
     attempts = 0
@@ -284,14 +293,16 @@ if __name__ == '__main__':
  
     try:
         sf = ContentModelListener(models, messaging_host, messaging_port, messaging_user, messaging_pass, repository_url)
-    
-        for model in models:
-            sf.subscribe("/topic/fedora.contentmodel.%s" % (model))
-            logging.info("Subscribing to topic /topic/fedora.contentmodel.%(model)s." % {'model': model})
-
-        # keep this thread alive waiting for a signal
-        signal.pause()
 
     except ReconnectFailedException:
         logging.info('Failed to connect to server: %s:%d' % (options.host,options.port))
         print 'Failed to connect to server: %s:%d' % (options.host, options.port)
+        #just exist
+        sys.exit(-1);
+
+    for model in models:
+        sf.subscribe("/topic/fedora.contentmodel.%s" % (model))
+        logging.info("Subscribing to topic /topic/fedora.contentmodel.%(model)s." % {'model': model})
+
+    #wait for a signal
+    signal.pause()
