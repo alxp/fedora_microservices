@@ -1,9 +1,0 @@
-[Core]
-Name = islandora-dm:cmodel-page
-Module = islandoradm
-
-[Documentation]
-Author = jesterhazy
-Version = 0.1
-Website = http://islandora.ca/
-Description = Creates image and ocr datastreams.

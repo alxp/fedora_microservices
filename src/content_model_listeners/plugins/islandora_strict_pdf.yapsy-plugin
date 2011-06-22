@@ -1,9 +1,0 @@
-[Core]
-Name = PDF content model
-Module = islandora_strict_pdf
-
-[Documentation]
-Author = Alexander O'Neill
-Version = 0.1
-Website = http://islandora.ca/
-Description = Runs updates the thumbnail of a PDF object.

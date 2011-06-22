@@ -1,0 +1,29 @@
+; The host and port the STOMP is running on
+[MessagingServer]
+hostname: localhost
+port: 61613
+
+; If we are disconnected from the messaging server we try to reconnect
+; [tries] times waiting [wait] seconds between attempts
+[Reconnect]
+tries: 5
+wait: 10
+
+[Logging]
+file: islandora_listener.log
+;Supported levels are DEBUG, INFO, WARNING, ERROR, CRITICAL
+level: ERROR
+; The maximum log size in bytes before a log rotation
+; a setting of zero means never rotate
+max_size: 10485760
+; number of backup logs to keep
+backup: 5
+
+[RepositoryServer]
+url: http://localhost:8080/fedora
+username: fedoraAdmin
+password: password
+
+; The module name of the plugins to use
+[Plugins]
+enabled: ilives_book

@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-'''
-Created on 2010-07-28
 
-@author: aoneill
-'''
 import os
 from setuptools import setup, find_packages
 
@@ -14,19 +10,14 @@ from setuptools import setup, find_packages
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-setup(name='fedora_micro_services',
-      version='0.2-$Format:%h$',
-      description='Fedora Stomp Listener',
-      author='Alexander O''Neill',
-      author_email='aoneill@upei.ca',
+setup(name='islandora_microservices',
+      version='2.0',
+      description='Fedora/Islandora Microservice System',
+      author='Jonathan Green, Alexander O''Neill',
+      author_email='islandora@googlegroups.com',
       maintainer='Jonathan Green',
       maintainer_email='jonathan@discoverygarden.ca',
       url='http://islandora.ca/',
       long_description=read('README'),
-      packages=find_packages('src'),
-      py_modules=['fedora_listener/__main__', 'content_model_listeners/__main__'],
-      package_dir = {'': 'src'},
-      package_data = {'content_model_listeners':['plugins/*']},
-      #data_files=[('/etc/init.d', ['fedora_microservices'])]
-      install_requires=['FeedParser', 'fcrepo', 'stomp.py', 'yapsy'],
+      install_requires=['fcrepo', 'stomp.py', 'yapsy', 'lxml'],
      )

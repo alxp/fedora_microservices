@@ -1,18 +1,14 @@
 Fedora Stomp listener and content model listeners
 
-Author: Alexander O'Neill
-E-Mail: aoneill@upei.ca
+Authors: Jonathan Green <jonathan@discoverygarden.ca>, Alexander O'Neill <aoneill@upei.ca>
 
-Maintainer: Jonathan Green
-E-Mail: jonathan@discoverygarden.ca
-
-Developed as part of the Islandora project (http://islandora.ca) at the University of Prince Edward Island Robertson Library. Currently maintained by Discovery Garden (discoverygarden.ca).
+Developed as part of the Islandora project (http://islandora.ca). Currently maintained by Discovery Garden (discoverygarden.ca).
 
 Installation requirements:
 
 Dependencies:
 
-This script uses the fcrepo, stompy and yapsy python libraries. These should be downloaded and installed automatically if you run setup.py script:
+This script uses the lxml, fcrepo, stompy and yapsy python libraries. These should be downloaded and installed automatically if you run setup.py script:
 
 $ python setup.py install
 
@@ -23,7 +19,6 @@ Fedora Setup:
 To use this package with Fedora's built-in ActiveMQ broker you will need to download the Spring distribution from http://www.springsource.org/download . Then copy the .jar files from the download package's dist directory into $FEDORA_HOME/tomcat/webapps/fedora/WEB-INF/lib to enable Stomp support in Fedora's embedded ActiveMQ broker.
 
 Then edit your Fedora instance's configuration to add a Stomp broker. Edit $FEDORA_HOME/server/config/fedora.fcfg and edit the messaging section
-
 <param name="java.naming.provider.url" value="vm:(broker:(tcp://localhost:61616,stomp://localhost:61613))"/>
 
 Adding the Stomp URL will send messages to both the ActiveMQ port on 61616 and the Stomp port on 61613.
