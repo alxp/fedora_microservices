@@ -26,6 +26,9 @@ CONFIG_FILE_NAME = 'islandora_listener.cfg'
 ISLANDORA_TOPIC = '/topic/islandora'
 FEDORA_TOPIC = '/topic/fedora.apim.update'
 
+# timer for stomp
+POLLING_TIME = 20
+
 class IslandoraListener(ConnectionListener):
 
     def __init__(self, repository_url, repository_user, repository_pass, plugin_manager, host='localhost', port=61613):
@@ -82,8 +85,10 @@ class IslandoraListener(ConnectionListener):
         """
         \see ConnectionListener::on_disconnected
         """
+        global disconnected_state
         logger.error("lost connection reconnect in %d sec..." % reconnect_wait)
         signal.alarm(reconnect_wait)
+        disconnected_state = True
 
     def _process_fedora_message(self, message):
         etree = ElementTree.ElementTree()
@@ -201,6 +206,8 @@ class IslandoraListener(ConnectionListener):
 #        """
 #        \see ConnectionListener::on_error
 #        """
+#        global disconnected_state
+#        disconnected_state = True
 #        logger.error("Error reported by Stomp. Trying to reconnect.")
 #        logger.error(body)
 #        logger.debug('here')
@@ -213,6 +220,9 @@ class IslandoraListener(ConnectionListener):
         \see ConnectionListener::on_connected
         """
         global attempts
+        global disconnected_state
+        disconnected_state = False
+        signal.alarm(POLLING_TIME)
         attempts = 0
         self.__print_async("CONNECTED", headers, body)
         
@@ -311,25 +321,30 @@ class IslandoraListener(ConnectionListener):
         self.client = FedoraClient(self.fc)
         
 
-def reconnect_handler(signum, frame):
-    global attempts
-    try:
-        logger.info("Attempt %d of %d." % (attempts+1, reconnect_max_attempts))
-        stomp_client.connect()
+def alarm_handler(signum, frame):
+    if disconnected_state == True:
+        global attempts
+        try:
+            logger.info("Attempt %d of %d." % (attempts+1, reconnect_max_attempts))
+            stomp_client.connect()
 
-        stomp_client.subscribe(ISLANDORA_TOPIC)
-        stomp_client.subscribe(FEDORA_TOPIC)
+            stomp_client.subscribe(ISLANDORA_TOPIC)
+            stomp_client.subscribe(FEDORA_TOPIC)
 
-        signal.pause()
-
-    except ReconnectFailedException:
-        attempts = attempts + 1
-        if(attempts == reconnect_max_attempts):
-            logger.error("Unable to reconnect, shutting down")
-            sys.exit(1)
+        except ReconnectFailedException:
+            attempts = attempts + 1
+            if(attempts == reconnect_max_attempts):
+                logger.error("Unable to reconnect, shutting down")
+                sys.exit(1)
+            else:
+                signal.alarm(reconnect_wait)
+    else:
+        if stomp_client.conn.is_connected():
+            signal.alarm(POLLING_TIME)
         else:
-            signal.alarm(reconnect_wait)
-            signal.pause()
+            sys.exit(1)
+        
+
         
 def shutdown_handler(signum, frame):
 
@@ -394,7 +409,7 @@ if __name__ == '__main__':
     # register handlers so we properly disconnect and reconnect
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
-    signal.signal(signal.SIGALRM, reconnect_handler)
+    signal.signal(signal.SIGALRM, alarm_handler)
 
     # global defined for the reconnect handler above
     attempts = 0
@@ -448,11 +463,15 @@ if __name__ == '__main__':
                     fedora_content_models[method] = set()
                 fedora_content_models[method].add(plugin)
 
+    # this if for the watchdog timer, watching if stomp exits behind our back
+    disconnected_state = False
+
     #connect to stomp and fedora servers
     stomp_client = IslandoraListener(repository_url, repository_user, repository_pass, manager, messaging_host, messaging_port)
 
     stomp_client.subscribe(ISLANDORA_TOPIC)
     stomp_client.subscribe(FEDORA_TOPIC)
 
-    #wait for a signal
-    signal.pause()
+    # wait for a signal
+    while(True):
+        signal.pause()
