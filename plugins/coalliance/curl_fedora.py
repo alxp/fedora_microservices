@@ -4,7 +4,6 @@ Created on Oct 19, 2010
 @author: aoneill
 '''
 
-
 import tempfile, os, subprocess, logging
 from urllib import quote
 
@@ -44,22 +43,3 @@ def update_datastream(obj, dsid, filename, label='', mimeType='', controlGroup='
         r = 1
     
     return r == 0
-
-class FedoraMicroService(object):
-    '''
-    classdocs
-    '''
-    name = "Generic Microservice"
-    content_model = "fedora-system:FedoraObject-3.0" 
-    dsIDs = ['DC']    
-    
-    def runRules(self, obj, dsid, body):
-        
-        return 
-
-
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        
