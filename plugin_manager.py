@@ -1,4 +1,3 @@
-# -*- mode: python -*-
 from yapsy.IPlugin import IPlugin
 from yapsy.FilteredPluginManager import FilteredPluginManager
 from yapsy.PluginManager import PluginManager
@@ -6,18 +5,44 @@ import os
 import logging
 import ConfigParser
 
+# this is the class that plugins should implement
+# this class has a member: self.logger that is initialized with a logger named after the plugin
+# this should be used instead of the root logger to output logging information from the plugin.
 class IslandoraListenerPlugin(IPlugin):
 
+    # if initialization is needed then initialize should be overriden instead.
     def __init__(self):
         pass
 
+    # this function is called during application setup. If no init is needed for the plugin 
+    # then this function doesn't need to be overidden.
+    # Parameters:
+    #   configparser - A config parser object initialized with the module configuration file
+    #     this can be used to do plugin specific configuration. See URL below.
+    #     http://docs.python.org/library/configparser.html
+    # Return:
+    #   True - if the plugin is successfully initialized.
+    #   False - Plugin was not successfully initalized, it will not be loaded.
     def initialize(self, config_parser):
         self.logger.info('Initialized')
         return True
 
-    def fedoraMessage(self, method, pid, obj, client, body):
+    # this is called when a message from fedora is recieved.
+    # Parameters:
+    #   message -  a dictionary containing the information in the ATOM feed sent with the Fedora
+    #     STOMP message parsed so that python can easily access it.
+    #   obj - a initialized FCRepo object class representing the PID that is being maniplated by 
+    #     Fedora. For some instances where the PID no longer exists (for instance purge messages) 
+    #     this is set to None.
+    #   client - the FCRepo client class, so that the repository can be accessed.
+    def fedoraMessage(self, message, obj, client):
         pass
 
+    # this is called when a message from islandora is recieved.
+    # Parameters:
+    #   method - string containing the method passed in the header from islandora
+    #   message - the message that was passed by islandora. It has alrady been JSON decoded.
+    #   client - fcrepo client, so the function can interact with the repository.
     def islandoraMessage(self, method, message, client):
         pass
 
