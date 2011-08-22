@@ -1,0 +1,84 @@
+# -*- mode: python -*-
+from yapsy.IPlugin import IPlugin
+from yapsy.FilteredPluginManager import FilteredPluginManager
+from yapsy.PluginManager import PluginManager
+import os
+import logging
+import ConfigParser
+
+class IslandoraListenerPlugin(IPlugin):
+
+    def __init__(self):
+        pass
+
+    def initialize(self, config_parser):
+        self.logger.info('Initialized')
+        return True
+
+    def fedoraMessage(self, method, pid, obj, client, body):
+        pass
+
+    def islandoraMessage(self, method, message, client):
+        pass
+
+
+class IslandoraPluginManager(PluginManager):
+
+    def loadPlugins(self, callback = None):
+        PluginManager.loadPlugins(self, callback)
+        for pluginCategory in self.category_mapping.itervalues():
+            for plugin in pluginCategory:
+                name = os.path.basename(plugin.path)
+                plugin.plugin_object.logger = logging.getLogger('IslandoraListener:' + name)
+                initialized = plugin.plugin_object.initialize(plugin.config_parser)
+                delattr(plugin, 'config_parser')
+                if initialized:
+                    logging.debug('Initialized %s' % name)
+                else:
+                    logging.debug('Failed to initialize %s' % name)
+                    pluginCategory.remove(plugin)
+
+    def gatherBasicPluginInfo(self, directory, filename):
+        (plugin_info, config_parser) = self._gatherCorePluginInfo(directory, filename)
+        if (plugin_info is None):
+            return
+        else:
+            infofile = os.path.join(directory, filename)
+            try:
+                plugin_info.fedora_methods = [ v.strip() for v in config_parser.get('Fedora', 'methods').split(',') ]
+                plugin_info.fedora_content_models = [ v.strip() for v in config_parser.get('Fedora', 'content_models').split(',') ]
+                plugin_info.islandora_methods = [ v.strip() for v in config_parser.get('Islandora', 'methods').split(',') ]
+            except (ConfigParser.NoOptionError, ConfigParser.NoSectionError), e:
+                logging.error('Error Reading Plugin Config File %s' % infofile)
+                logging.error(e)
+                return
+        plugin_info.config_parser = config_parser
+        if config_parser.has_section('Documentation'):
+            if config_parser.has_option('Documentation', 'Author'):
+                plugin_info.author = config_parser.get('Documentation', 'Author')
+            if config_parser.has_option('Documentation', 'Version'):
+                plugin_info.setVersion(config_parser.get('Documentation', 'Version'))
+            if config_parser.has_option('Documentation', 'Website'):
+                plugin_info.website = config_parser.get('Documentation', 'Website')
+            if config_parser.has_option('Documentation', 'Copyright'):
+                plugin_info.copyright = config_parser.get('Documentation', 'Copyright')
+            if config_parser.has_option('Documentation', 'Description'):
+                    plugin_info.description = config_parser.get('Documentation', 'Description')
+        return plugin_info
+
+
+class IslandoraFilteredPluginManager(FilteredPluginManager):
+
+    def __init__(self, enabled_plugins, decorated_manager = None, categories_filter = {'Default': IPlugin}, directories_list = None, plugin_info_ext = 'yapsy-plugin'):
+        FilteredPluginManager.__init__(self, decorated_manager, categories_filter, directories_list, plugin_info_ext)
+        self.enabled_plugins = enabled_plugins
+        logging.debug('IslandoraPluginManager Enabled plugin list: %s' % enabled_plugins)
+
+    def isPluginOk(self, info):
+        name = os.path.basename(info.path)
+        if (name in self.enabled_plugins):
+            return True
+        else:
+            logging.debug('IslandoraPluginManager %s not enabled' % name)
+            return False
+
