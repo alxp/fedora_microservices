@@ -26,4 +26,4 @@ password: password
 
 ; The module name of the plugins to use
 [Plugins]
-enabled: ilives_book
+enabled: sample_plugin

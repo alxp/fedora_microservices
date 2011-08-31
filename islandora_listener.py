@@ -49,8 +49,12 @@ class IslandoraListener(ConnectionListener):
             logger.info("Connecting to Fedora server at %(url)s" % {'url': repository_url})
             self.fc = fcrepo.connection.Connection(repository_url, username = repository_user, password = repository_pass)
             self.client = FedoraClient(self.fc)
-        except exception,e:
+        except Exception,e:
             logger.error('Error while connecting to Fedora server %(url)s. Error: (%(error)s).' % {'url':repository_url, 'error':e})
+            try:
+                self.conn.disconnect()
+            except NotConnectedException:
+                pass
             sys.exit(1)
 
         self.transaction_id = None
@@ -460,8 +464,8 @@ if __name__ == '__main__':
         for cm in plugin.fedora_content_models:
             if cm != '':
                 if cm not in fedora_content_models:
-                    fedora_content_models[method] = set()
-                fedora_content_models[method].add(plugin)
+                    fedora_content_models[cm] = set()
+                fedora_content_models[cm].add(plugin)
 
     # this if for the watchdog timer, watching if stomp exits behind our back
     disconnected_state = False
