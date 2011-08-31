@@ -3,4 +3,4 @@ build
 dist
 *.pyc
 *.log
-src/fedora_micro_services.egg-info/
+islandora_microservices.egg-info/
