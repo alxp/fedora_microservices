@@ -54,7 +54,7 @@ class IslandoraPluginManager(PluginManager):
         for pluginCategory in self.category_mapping.itervalues():
             for plugin in pluginCategory:
                 name = os.path.basename(plugin.path)
-                plugin.plugin_object.logger = logging.getLogger('IslandoraListener:' + name)
+                plugin.plugin_object.logger = logging.getLogger('IslandoraListener.' + name)
                 initialized = plugin.plugin_object.initialize(plugin.config_parser)
                 delattr(plugin, 'config_parser')
                 if initialized:
