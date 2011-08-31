@@ -110,6 +110,7 @@ class IslandoraListener(ConnectionListener):
         ds['uri'] = root.find(ATOM_NS+'author/'+ATOM_NS+'uri').text
         ds['method'] = root.find(ATOM_NS+'title').text
         ds['args'] = []
+        ds['dsid'] = None
 
         for arg in root.findall(ATOM_NS+'category'):
             scheme = arg.get('scheme').split(':',1)
@@ -118,6 +119,8 @@ class IslandoraListener(ConnectionListener):
                 r['name'] = arg.get('scheme').split(':',1)[1]
                 r['type'] = arg.get('label').split(':',1)[1]
                 r['value'] = arg.get('term')
+                if r['name'] == 'dsID':
+                    ds['dsid'] = r['value']
                 ds['args'].append(r)
             elif scheme[0] == FEDORA_VERSION:
                 ds['fedora_version'] = arg.get('term')

@@ -7,15 +7,12 @@ Created on March 5, 2011
 # These will appear in an IDE as broken dependencies.
 # This is OK because they live in the plugins folder but are invoked in the app's main folder
 # by the plugin manager
-from plugin_manager import IslandoraListenerPlugin
-from categories import get_datastream_as_file, update_datastream
+from curl_fedora import get_datastream_as_file, update_datastream
 from shutil import rmtree
 from datetime import datetime
-from fedorarelsint import RELSINTDatastream
-from fcrepo.utils import NS
-from fcrepo.connection import FedoraConnectionException
+from fedora_relationships import rels_int
 from lxml import etree
-import logging, os, subprocess, string, httplib, re, random, types
+import os, subprocess, string, httplib, re, random, types
 
 # thumbnail constants
 tn_postfix = '-tn.jpg'
@@ -181,128 +178,43 @@ def check_dates(obj, dsid, derivativeid):
     else:
         return False
 
-class coalliance_cmodel(FedoraMicroService):
-    name = "Coalliance Oral History Cmodel"
-    content_model =  ['codearl:codearlBasicObject', 'coccc:cocccBasicObject', 'cog:cogBasicObject', 'cogru:cogruBasicObject', 'wyu:wyuBasicObject', 'codu:coduBasicObject', 'codr:codrBasicObject', 'cogjm:cogjmBasicObject', 'co:coBasicObject', 'cowjcpl:cowjcplBasicObject', 'gopig:gopigBasicObject', 'coccc:cocccBasicETD', 'cog:cogBasicETD', 'cogru:cogruBasicETD', 'wyu:wyuBasicETD', 'codu:coduBasicETD', 'codr:codrBasicETD', 'cogjm:cogjmBasicETD', 'codr:codrBasicVRA', 'co:coPublications', 'codearl:coPublications']
+def runRules(self, obj, dsid, body):
 
-    # general derivative function
-    def create_derivative(self, relationship, postfix, function):
-        # see if we need a derivative
-        if relationship in self.relationships:
-            did = self.relationships[relationship][0]
-            if( did != mangle_dsid(did) ):
-                logging.warning("DSID mismatch Pid:%s Dsid:%s" % (self.obj.pid, self.dsid))
-            try:
-                if check_dates(self.obj, self.dsid, did):
-                    function(self.obj, self.dsid, did)
-            except FedoraConnectionException:
-                function(self.obj, self.dsid, did)
+    self.obj = obj
+    self.dsid = dsid
+    try:
+        if dsid == 'MODS':
+            # some functions use the wrong namespace 
+            # determine what to use
+            mods_namespace = '{http://www.loc.gov/mods/v3}'
+
+            parser = etree.XMLParser(remove_blank_text=True)
+            root = etree.fromstring(obj['MODS'].getContent().read(), parser)
+
+            ns = None
+
+            for k in root.nsmap:
+                if(type(k) == types.StringType and k.lower().find('mods') != -1):
+                    ns = '{%s}' % root.nsmap[k]
+
+            if ns == None:
+                ns = mods_namespace
+
+            url = root.find(ns+'location/'+ns+'url')
+            if(url == None and get_handle(obj)):
+                location = root.find(ns+'location')
+                if(location == None):
+                    location = etree.SubElement(root, ns+'location')
+                url = etree.SubElement(location, ns+'url')
+                url.attrib['usage']='primary display'
+                url.text = 'http://hdl.handle.net/10176/'+obj.pid
+                obj['MODS'].setContent(etree.tostring(root, pretty_print=True))
         else:
-            did = self.dsid.rsplit('.', 1)[0]
-            did += postfix
-            did = mangle_dsid(did)
-            r = function(self.obj, self.dsid, did)
-            if( r == 0 ):
-                self.relsint.addRelationship(self.dsid, relationship, did) 
-                self.relsint.update()
+            self.relsint = RELSINTDatastream(obj)
+            self.relationships = self.relsint.getRelationships(dsid)
+            self.mimetype_dispatch()
 
-    # functions need to be defined for each mimetype to be worked on
-    def application_pdf(self):
-        self.create_derivative('hasThumbnail', tn_postfix, create_thumbnail)
-        self.create_derivative('hasSWF', '.swf', create_swf)
-
-    def image_jpeg(self):
-        # since thumnails are JPGs make sure we aren't recursing
-        if (not self.dsid.endswith(tn_postfix)) and self.dsid != 'TN':
-            self.create_derivative('hasThumbnail', tn_postfix, create_thumbnail)
-
-    def image_tiff(self):
-        self.create_derivative('hasThumbnail', tn_postfix, create_thumbnail)
-        self.create_derivative('hasJP2', '.jp2', create_jp2)
-
-    def audio_x_wav(self):
         #TODO
-        # deal with datastreams that already have .mp3 in format
-        # original: namem#.wav
-        # derived: name#.mp3
-        self.create_derivative('hasMP3', '.mp3', create_mp3)
-        self.create_derivative('hasOGG', '.ogg', create_ogg)
-
-    # mimetype isn't found, do nothing
-    def mimetype_none(self):
-      pass
-
-    # this is a simple dispatcher that will run functions based on mimetype
-    def mimetype_dispatch(self):
-        try:
-            # translate - / + . into _ for the mimetype function
-            trantab = string.maketrans('-/+.','____')
-            mime =  self.obj[self.dsid].mimeType.encode('ascii')
-            mime_function_name = mime.translate(trantab)
-            # get the function from the self object and run it
-            mime_function = getattr( self, mime_function_name, self.mimetype_none )
-            mime_function()
-        except KeyError:
-            # we catch a key error because .mimeType throws one 
-            # if no mimeType is defined 
-            return; 
-
-    def runRules(self, obj, dsid, body):
- 
-        self.obj = obj
-        self.dsid = dsid
-        try:
-            if dsid == 'MODS':
-                # some functions use the wrong namespace 
-                # determine what to use
-                mods_namespace = '{http://www.loc.gov/mods/v3}'
-
-                parser = etree.XMLParser(remove_blank_text=True)
-                root = etree.fromstring(obj['MODS'].getContent().read(), parser)
-
-                ns = None
-
-                for k in root.nsmap:
-                    if(type(k) == types.StringType and k.lower().find('mods') != -1):
-                        ns = '{%s}' % root.nsmap[k]
-
-                if ns == None:
-                    ns = mods_namespace
-
-                url = root.find(ns+'location/'+ns+'url')
-                if(url == None and get_handle(obj)):
-                    location = root.find(ns+'location')
-                    if(location == None):
-                        location = etree.SubElement(root, ns+'location')
-                    url = etree.SubElement(location, ns+'url')
-                    url.attrib['usage']='primary display'
-                    url.text = 'http://hdl.handle.net/10176/'+obj.pid
-                    obj['MODS'].setContent(etree.tostring(root, pretty_print=True))
-            else:
-                self.relsint = RELSINTDatastream(obj)
-                self.relationships = self.relsint.getRelationships(dsid)
-                self.mimetype_dispatch()
-
-            #TODO
-            #handle MODS handle stuff 
-        except FedoraConnectionException:
-            logging.warning('Object %s does not exist.' % obj.pid)
-            
-
-class coalliance(IslandoraListenerPlugin):
-
-    def fedoraMessage(self, message, obj, client):
-
-        try:
-            # do actions based on DSID then on MIME
-            if self.dsid == 'MODS': 
-                coalliance_conversions.add_handle_to_mods(obj['MODS'])
-            else: 
-                coalliance_mime.dispatch(obj,message)
-                
-        except FedoraConnectionException:
-            self.logger.warning('Object %s does not exist.' % obj.pid)
-
-    def islandoraMessage(self, method, message, client):
-        pass
-        
+        #handle MODS handle stuff 
+    except FedoraConnectionException:
+        logging.warning('Object %s does not exist.' % obj.pid)
