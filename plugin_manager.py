@@ -31,6 +31,26 @@ class IslandoraListenerPlugin(IPlugin):
     # Parameters:
     #   message -  a dictionary containing the information in the ATOM feed sent with the Fedora
     #     STOMP message parsed so that python can easily access it.
+    #     An example message:
+    #     {
+    #     'args': [   {   'name': 'pid', 'type': 'string', 'value': 'codearl:9044'},
+    #                 {   'name': 'state', 'type': 'string', 'value': 'A'},
+    #                 {   'name': 'label', 'type': 'string', 'value': 'test ingestt'},
+    #                 {   'name': 'logMessage', 'type': 'string', 'value': 'null'}],
+    #     'author': 'fedoraAdmin',
+    #     'content_models': ['codearl:codearlBasicTest'],
+    #     'dsid': None,
+    #     'id': 'urn:uuid:a57eba81-d9bf-4803-97f5-53b3a62924e9',
+    #     'method': 'modifyObject',
+    #     'pid': 'codearl:9044',
+    #     'return': '2011-09-01T16:58:46.303Z',
+    #     'updated': datetime.datetime(2011, 9, 1, 16, 58, 46, 305000),
+    #     'uri': 'http://fedora.coalliance.org:8080/fedora'
+    #     }
+    #     'method', 'pid' and 'dsid' are all guarenteed to exist. Although pid and dsid may be 
+    #     set to None depending on the method. To find more information about the messages being
+    #     parsed take a look at this page:
+    #     http://fedora-commons.org/documentation/3.0/userdocs/server/messaging/
     #   obj - a initialized FCRepo object class representing the PID that is being maniplated by 
     #     Fedora. For some instances where the PID no longer exists (for instance purge messages) 
     #     this is set to None.
