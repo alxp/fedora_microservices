@@ -23,7 +23,7 @@ FEDORA_USER=fedora
 start () {
 	echo -n "Starting $PROG: "
 	# check to see if the process is already running
-	if [ -f /var/lock/jms ]; then
+	if [ -f /var/lock/islandora_microservices ]; then
 		echo "$PROG is already running"
 	else
 			# start JMS as the fedora user
@@ -51,7 +51,7 @@ stop () {
 		kill `ps -ef | grep islandora_listener | grep -v grep | awk '{print $2}'` &>/dev/null
 		RETVAL=$?
 		echo "                                          [ \033[0;32m OK\033[0;39m""  ]"
-		[ $RETVAL = 0 ] && rm -f /var/lock/jms
+		[ $RETVAL = 0 ] && rm -f /var/lock/islandora_microservices
 	fi
 }
 
@@ -71,7 +71,7 @@ case $1 in
 		restart
 	;;
 	status)
-		if [ -f /var/lock/jms ]; then
+		if [ -f /var/lock/islandora_microservices ]; then
 			echo "$PROG (pid `ps -ef | grep 'fedora_listener' | grep -v 'grep' | awk '{print $2}'`) is running..."
 		else
 			echo "$PROG has not been started."
