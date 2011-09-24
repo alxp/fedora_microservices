@@ -50,9 +50,9 @@ Options:
   -P PLUGINPATH, --plugin-path=PLUGINPATH
                         Path to a directory with plugin files.
 
-Copy the file islandora_microservices.cfg.default to islandora_microservices.cfg, and edit it with your configuration options. The sample config file contains comments that should explain all the options.
+Copy the file islandora_listener.cfg.default to islandora_listener.cfg, and edit it with your configuration options. The sample config file contains comments that should explain all the options.
 
-$ python fedora_listener -C /path/to/fedora_microservices.cfg
+$ python islandora_listener.py -C /path/to/islandora_listener.cfg
 
 This will tell the script to connect to the Stomp port on the server specified in the configuration file and listen for messages on the topics /topic/fedora.apim.update and /topic/islandora.  The script parses the recieved messages, and based on the options in the plugin config files calls the required plugins.
 
