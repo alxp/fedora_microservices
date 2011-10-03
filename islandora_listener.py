@@ -47,7 +47,7 @@ class IslandoraListener(ConnectionListener):
         # connect to the fedora server
         try:
             logger.info("Connecting to Fedora server at %(url)s" % {'url': repository_url})
-            self.fc = fcrepo.connection.Connection(repository_url, username = repository_user, password = repository_pass)
+            self.fc = fcrepo.connection.Connection(repository_url, username = repository_user, password = repository_pass, persistent=False)
             self.client = FedoraClient(self.fc)
         except Exception,e:
             logger.error('Error while connecting to Fedora server %(url)s. Error: (%(error)s).' % {'url':repository_url, 'error':e})
