@@ -19,14 +19,14 @@ class jwa_plugin(IslandoraListenerPlugin):
         # do some fun stuff based on this
         pp = pprint.PrettyPrinter(indent=4)        
 
-        if 'jwa:audioCModel' in message['content_models'] and message['dsid']:
+        if 'jwa:audioCModel' in message['content_models']:
             if 'TN' not in obj:
                obj.addDataStream('TN', controlGroup=u'R', location=AUDIO_THUMB_LOCATION, \
                    mimeType=u'image/png')
-        if 'jwa:imageCModel' in message['content_models'] and message['dsid'] == 'ORIGINAL':
+        if 'jwa:imageCModel' in message['content_models'] and (message['dsid'] == 'ORIGINAL' or message['method'] == 'ingest'):
             DSC.create_jp2(obj, 'ORIGINAL', 'JP2')
             DSC.create_thumbnail(obj, 'ORIGINAL', 'TN')
-        if ('jwa:documentCModel' in message['content_models']) and message['dsid'] == 'ORIGINAL':
+        if 'jwa:documentCModel' in message['content_models'] and (message['dsid'] == 'ORIGINAL' or message['method'] == 'ingest'):
             if obj['ORIGINAL'].mimeType == 'application/pdf':
                 DSC.create_swf(obj, 'ORIGINAL', 'FLEXPAPER')
                 DSC.create_thumbnail(obj, 'ORIGINAL', 'TN')
@@ -35,8 +35,8 @@ class jwa_plugin(IslandoraListenerPlugin):
                 if r == 0:
                     DSC.create_thumbnail(obj, 'PDF', 'TN')
                     DSC.create_swf(obj, 'PDF', 'FLEXPAPER')
-                else:
-                    obj.addDataStream('TN', controlGroup=u'R', location=BINARY_THUMB_LOCATION, \
+            if 'TN' not in obj:
+                obj.addDataStream('TN', controlGroup=u'R', location=BINARY_THUMB_LOCATION, \
                         mimeType=u'image/png')
 
     def islandoraMessage(self, method, message, client):
