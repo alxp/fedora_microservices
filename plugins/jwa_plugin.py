@@ -35,8 +35,8 @@ class jwa_plugin(IslandoraListenerPlugin):
                 if r == 0:
                     DSC.create_thumbnail(obj, 'PDF', 'TN')
                     DSC.create_swf(obj, 'PDF', 'FLEXPAPER')
-            if 'TN' not in obj:
-                obj.addDataStream('TN', controlGroup=u'R', location=BINARY_THUMB_LOCATION, \
+                else:
+                    obj.addDataStream('TN', controlGroup=u'R', location=BINARY_THUMB_LOCATION, \
                         mimeType=u'image/png')
 
     def islandoraMessage(self, method, message, client):
