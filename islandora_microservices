@@ -12,9 +12,9 @@
 # Source function library.
 
 PROG="Islandora Microservices"
-PYTHON=/opt/ActivePython-2.7/bin/python
-MICROSERVICES_PATH=/opt/islandora_microservices/
-CONFIG_FILE=/opt/islandora_microservices/islandora_microservices.cfg
+PYTHON=python26
+MICROSERVICES_PATH=/usr/local/islandora_microservices/
+CONFIG_FILE=/usr/local/islandora_microservices/islandora_listener.cfg
 
 # *** Please make sure you change the fedora user to reflect the local setup. ***
 
@@ -27,15 +27,17 @@ start () {
 		echo "$PROG is already running"
 	else
 			# start JMS as the fedora user
-			su - $FEDORA_USER -c "$PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE &" >/dev/null 2>&1
+			#sudo -u $FEDORA_USER -E "$PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE &" >/dev/null 2>&1
+			#sudo -u $FEDORA_USER bash -c 'env PATH=$PATH:/usr/local/bin HOME=/home/fedora $PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE &> /dev/null 2>&1'
+			sudo -u $FEDORA_USER bash -c "env PATH=$PATH:/usr/local/bin HOME=/home/fedora $PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE &> /dev/null &"
 			sleep 3
 			ps -ef | grep 'islandora_listener' | grep -v 'grep' >/dev/null 2>&1
 			RETVAL=$?
 			if [ $RETVAL = 0 ]; then
 				touch /var/lock/islandora_microservices
-				echo "                                          [ \033[0;32m OK\033[0;39m""  ]"
+				echo "                                          [ OK ]"
 			else
-				echo "                                          [ \033[0;31m FAILED\033[0;39m""  ]"
+				echo "                                          [ FAILED ]"
 			fi
 		fi
 }
@@ -50,7 +52,7 @@ stop () {
 		# use kill -2 to stop JMS.
 		kill `ps -ef | grep islandora_listener | grep -v grep | awk '{print $2}'` &>/dev/null
 		RETVAL=$?
-		echo "                                          [ \033[0;32m OK\033[0;39m""  ]"
+		echo "                                          [ OK ]"
 		[ $RETVAL = 0 ] && rm -f /var/lock/islandora_microservices
 	fi
 }
