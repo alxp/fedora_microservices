@@ -1,3 +1,4 @@
+logs/
 /*.cfg
 config/*.cfg
 build

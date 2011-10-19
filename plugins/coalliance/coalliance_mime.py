@@ -17,7 +17,7 @@ class CoallianceMime():
     def __init__(self, obj, message):
         self.obj = obj
         self.message = message
-   
+
     def create_thumbnail(self, obj, dsid, tnid):
         r = DSC.create_thumbnail(obj, dsid, tnid)
 
@@ -36,7 +36,7 @@ class CoallianceMime():
         return r
 
     # general derivative creation function
-    def create_derivative(self, relationship, postfix, function, dsid=None):
+    def create_derivative(self, relationship, postfix, function, dsid=None, args=None):
         # make sure we are not creating a derivative of a derivative
         if (not self.test_derivative()):
             # we default to creating a derivative of ourselves
@@ -48,14 +48,23 @@ class CoallianceMime():
                 did = relationships[0][2].data
                 try:
                     if DSC.check_dates(self.obj, self.dsid, did):
-                        function(self.obj, dsid, did)
+                        if(args):
+                            function(self.obj, dsid, did, args)
+                        else:
+                            function(self.obj, dsid, did)
                 except FedoraConnectionException:
-                    function(self.obj, dsid, did)
+                    if(args):
+                        function(self.obj, dsid, did, args)
+                    else:
+                        function(self.obj, dsid, did)
             else:
                 did = self.dsid.rsplit('.', 1)[0]
                 did += postfix
                 did = mangle_dsid(did)
-                r = function(self.obj, dsid, did)
+                if(args):
+                    r = function(self.obj, dsid, did, args)
+                else:
+                    r = function(self.obj, dsid, did)
                 if( r == 0 ):
                     self.relsint.addRelationship(self.dsid, relationship, did)
                     self.relsint.update()
@@ -69,6 +78,13 @@ class CoallianceMime():
             return False
 
     # meta functions called by multiple mime functions
+    def video_derivative(self):
+        self.create_derivative('hasMP4', '.mp4', DSC.create_mp4)
+        relationship = self.relsint.getRelationships(subject=self.dsid, predicate='hasMP4')
+        if(relationship):
+            mp4id = relationship[0][2].data
+            self.create_derivative('hasThumbnail', tn_postfix, self.create_thumbnail, mp4id)
+
     def image_derivative(self):
         self.create_derivative('hasThumbnail', tn_postfix, self.create_thumbnail)
         self.create_derivative('hasJP2', '.jp2', DSC.create_jp2)
@@ -81,10 +97,23 @@ class CoallianceMime():
             pdfid = relationship[0][2].data
             self.create_derivative('hasThumbnail', tn_postfix, self.create_thumbnail, pdfid)
             self.create_derivative('hasSWF', '.swf', DSC.create_swf, pdfid)
+    
+    def audio_derivative(self):
+        args = ['-mm', '--cbr', '-b96']
+        self.create_derivative('hasMP3', '.mp3', DSC.create_mp3, args=args)
+        self.create_derivative('hasOGG', '.ogg', DSC.create_ogg)
 
     ##
     ## functions need to be defined for each mimetype to be worked on
     ##
+    
+    # video stuff
+    def video_mp4(self):
+        self.video_derivative()
+    def video_quicktime(self):
+        self.video_derivative()
+    def video_x_ms_wmv(self):
+        self.video_derivative()
 
     # document stuff
     def application_pdf(self):
@@ -121,8 +150,9 @@ class CoallianceMime():
 
     # audio stuff
     def audio_x_wav(self):
-        self.create_derivative('hasMP3', '.mp3', DSC.create_mp3)
-        self.create_derivative('hasOGG', '.ogg', DSC.create_ogg)
+        self.audio_derivative()
+    def audio_mpeg(self):
+        self.audio_derivative()
 
     # mimetype isn't found, do nothing
     def mimetype_none(self):
