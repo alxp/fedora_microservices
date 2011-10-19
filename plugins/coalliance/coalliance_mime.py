@@ -8,7 +8,6 @@ import string
 from islandoraUtils import DSConverter as DSC
 from islandoraUtils.metadata.fedora_relationships import rels_int, rels_namespace, rels_object
 from islandoraUtils.fedoraLib import mangle_dsid
-from fcrepo.connection import FedoraConnectionException
 
 tn_postfix = '-tn.jpg'
 
@@ -35,6 +34,15 @@ class CoallianceMime():
                     self.relsint.addRelationship('TN', 'fromMime', new_mime)
         return r
 
+    # general call derivative function
+    def call_function(self, function, dsid, did, args):
+        if(args):
+            r = function(self.obj, dsid, did, args)
+        else:
+            r = function(self.obj, dsid, did)
+
+        return r
+
     # general derivative creation function
     def create_derivative(self, relationship, postfix, function, dsid=None, args=None):
         # make sure we are not creating a derivative of a derivative
@@ -46,30 +54,24 @@ class CoallianceMime():
             relationships = self.relsint.getRelationships(subject=self.dsid, predicate=relationship)
             if relationships:
                 did = relationships[0][2].data
-                try:
-                    if DSC.check_dates(self.obj, self.dsid, did):
-                        if(args):
-                            function(self.obj, dsid, did, args)
-                        else:
-                            function(self.obj, dsid, did)
-                except FedoraConnectionException:
-                    if(args):
-                        function(self.obj, dsid, did, args)
-                    else:
-                        function(self.obj, dsid, did)
+                if DSC.check_dates(self.obj, self.dsid, did):
+                    self.call_function(function, dsid, did, args)
+                    self.relsint.update()
             else:
                 did = self.dsid.rsplit('.', 1)[0]
                 did += postfix
                 did = mangle_dsid(did)
-                if(args):
-                    r = function(self.obj, dsid, did, args)
-                else:
-                    r = function(self.obj, dsid, did)
+                if did == self.dsid or did in self.obj:
+                    did = self.dsid.rsplit('.', 1)[0]
+                    did += '.d'
+                    did += postfix
+                    did = mangle_dsid(did)
+                r = self.call_function(function, dsid, did, args)
                 if( r == 0 ):
                     self.relsint.addRelationship(self.dsid, relationship, did)
                     self.relsint.update()
 
-    # test derivative - returns true is the dsid is a derivative.
+    # test derivative - returns true if the dsid is a derivative.
     def test_derivative(self):
         relationships = self.relsint.getRelationships(object=self.dsid)
         if(relationships):
