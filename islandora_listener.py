@@ -337,6 +337,7 @@ def alarm_handler(signum, frame):
 
             stomp_client.subscribe(ISLANDORA_TOPIC)
             stomp_client.subscribe(FEDORA_TOPIC)
+            logger.error("Reconnected!")
 
         except ReconnectFailedException:
             attempts = attempts + 1
