@@ -12,13 +12,14 @@
 # Source function library.
 
 PROG="Islandora Microservices"
-PYTHON=python26
-MICROSERVICES_PATH=/usr/local/islandora_microservices/
-CONFIG_FILE=/usr/local/islandora_microservices/islandora_listener.cfg
+PYTHON=python
+MICROSERVICES_PATH=/opt/islandora_microservices/
+CONFIG_FILE=/opt/islandora_microservices/config/islandora_listener.cfg
+PLUGIN_DIR=/opt/islandora_microservices/plugins_stable
 
 # *** Please make sure you change the fedora user to reflect the local setup. ***
 
-FEDORA_USER=fedora
+FEDORA_USER=microservices
 
 start () {
 	echo -n "Starting $PROG: "
@@ -27,11 +28,9 @@ start () {
 		echo "$PROG is already running"
 	else
 			# start JMS as the fedora user
-			#sudo -u $FEDORA_USER -E "$PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE &" >/dev/null 2>&1
-			#sudo -u $FEDORA_USER bash -c 'env PATH=$PATH:/usr/local/bin HOME=/home/fedora $PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE &> /dev/null 2>&1'
-			sudo -u $FEDORA_USER bash -c "env PATH=$PATH:/usr/local/bin HOME=/home/fedora $PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE &> /dev/null &"
+			sudo -E -u $FEDORA_USER bash -c "env HOME=/home/microservices $PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE -P $PLUGIN_DIR &> /dev/null &"
 			sleep 3
-			ps -ef | grep 'islandora_listener' | grep -v 'grep' >/dev/null 2>&1
+			ps -ef | grep 'python' | grep 'islandora_listener' | grep $CONFIG_FILE | grep -v 'grep' >/dev/null 2>&1
 			RETVAL=$?
 			if [ $RETVAL = 0 ]; then
 				touch /var/lock/islandora_microservices
@@ -50,7 +49,7 @@ stop () {
 		echo "$PROG is not running"
 	else
 		# use kill -2 to stop JMS.
-		kill `ps -ef | grep islandora_listener | grep -v grep | awk '{print $2}'` &>/dev/null
+		kill `ps -ef | grep python | grep islandora_listener | grep $CONFIG_FILE | grep -v grep | awk '{print $2}'` &>/dev/null
 		RETVAL=$?
 		echo "                                          [ OK ]"
 		[ $RETVAL = 0 ] && rm -f /var/lock/islandora_microservices
@@ -59,6 +58,7 @@ stop () {
 
 restart() {
 	stop
+  sleep 2
 	start
 }
 
@@ -74,14 +74,14 @@ case $1 in
 	;;
 	status)
 		if [ -f /var/lock/islandora_microservices ]; then
-			echo "$PROG (pid `ps -ef | grep 'fedora_listener' | grep -v 'grep' | awk '{print $2}'`) is running..."
+			echo "$PROG (pid `ps -ef | grep 'python' | grep 'islandora_listener' | grep $CONFIG_FILE | grep -v 'grep' | awk '{print $2}'`) is running..."
 		else
 			echo "$PROG has not been started."
 		fi
 	;;
 	*)
 
-	echo $"Usage: $PROG {start|stop|restart|status}"
+	echo "Usage: $PROG {start|stop|restart|status}"
 	exit 3
 esac
 
