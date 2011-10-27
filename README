@@ -19,9 +19,9 @@ apt-get install python-lxml
 
 CentOS:
 yum install python26
-yum install python26-lxml
+easy_install-2.6 lxml
 
-If Cent complains when installing you may also need these packages: gcc libxml2 libxml2-devel libxslt libxslt-devel
+If Cent complains when installing you may also need these packages: gcc libxml2 libxml2-devel libxslt libxslt-devel python26-devel python26-distribute
 
 OSX:
 See http://stackoverflow.com/questions/1512530/cant-install-lxml-python-2-6-3-osx-10-6-snow-leopard for Mac OS X 10.6 Snow Leopard installation.
