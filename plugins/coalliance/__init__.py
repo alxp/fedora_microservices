@@ -21,7 +21,7 @@ class coalliance(IslandoraListenerPlugin):
             elif dsid == 'TN':
                 pass
             #elif dsid == 'POLICY':
-            #    coalliance_policy.process(obj)
+            #    coalliance_metadata.add_policy_to_rels(obj)
             else:
                 comime.dispatch(dsid)
                 

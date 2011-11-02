@@ -4,6 +4,10 @@ import types
 import logging
 from lxml import etree
 
+from islandoraUtils.metadata.fedora_relationships import rels_namespace, rels_object, rels_ext
+from islandoraUtils.xacml.tools import Xacml
+from islandoraUtils.xacml.exception import XacmlException
+
 #handle constants
 handleServer='damocles.coalliance.org'
 handleServerPort='9080'
@@ -60,3 +64,18 @@ def add_handle_to_mods(obj):
         url.text = 'http://hdl.handle.net/10176/'+obj.pid
         obj['MODS'].setContent(etree.tostring(root, pretty_print=True))
 
+def add_policy_to_rels(obj):
+    policy_ds = obj['POLICY']
+    try:
+        xacml = Xacml(policy_ds.getContent().read())
+    except XacmlException:
+        return False
+
+    relsext = rels_ext(obj, rels_namespace('isle','http://islandora.ca/ontology/relsext'), 'isle')
+    users = xacml.viewingRule.getUsers()
+    roles = xacml.viewingRule.getRoles()
+    for user in users:
+        relsext.addRelationship('isViewableByUser', rels_object(user,rels_object.LITERAL))
+    for role in roles:
+        relsext.addRelationship('isViewableByRole', rels_object(role,rels_object.LITERAL))
+    relsext.update()
