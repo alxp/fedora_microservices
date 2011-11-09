@@ -65,15 +65,27 @@ def add_handle_to_mods(obj):
         obj['MODS'].setContent(etree.tostring(root, pretty_print=True))
 
 def add_policy_to_rels(obj):
+    # TODO: This isn't very efficient. If the users and roles are the same we shouldn't
+    # bother updating the rels. It will do for now in testing however.
+    logger = logging.getLogger('IslandoraListener.coalliance.add_policy_to_rels')    
     policy_ds = obj['POLICY']
     try:
         xacml = Xacml(policy_ds.getContent().read())
     except XacmlException:
         return False
 
-    relsext = rels_ext(obj, rels_namespace('isle','http://islandora.ca/ontology/relsext'), 'isle')
+    relsext = rels_ext(obj, rels_namespace('islandora','http://islandora.ca/ontology/relsext#'), 'islandora')
+
     users = xacml.viewingRule.getUsers()
     roles = xacml.viewingRule.getRoles()
+
+    logger.debug("Users in policy: %s." % users)
+    logger.debug("Roles in policy: %s." % roles)
+
+    #remove the old users and roles before we add new ones and have duplicates
+    relsext.purgeRelationships(predicate='isViewableByUser')
+    relsext.purgeRelationships(predicate='isViewableByRole')
+
     for user in users:
         relsext.addRelationship('isViewableByUser', rels_object(user,rels_object.LITERAL))
     for role in roles:

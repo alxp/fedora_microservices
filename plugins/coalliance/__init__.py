@@ -9,7 +9,6 @@ from plugin_manager import IslandoraListenerPlugin
 from fcrepo.connection import FedoraConnectionException
 from coalliance_mime import CoallianceMime
 import coalliance_metadata
-import coalliance_policy
 
 class coalliance(IslandoraListenerPlugin):
 
@@ -20,8 +19,8 @@ class coalliance(IslandoraListenerPlugin):
                 coalliance_metadata.add_handle_to_mods(obj)
             elif dsid == 'TN':
                 pass
-            #elif dsid == 'POLICY':
-            #    coalliance_metadata.add_policy_to_rels(obj)
+            elif dsid == 'POLICY':
+                coalliance_metadata.add_policy_to_rels(obj)
             else:
                 comime.dispatch(dsid)
                 
