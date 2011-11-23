@@ -136,11 +136,16 @@ class IslandoraListener(ConnectionListener):
         return ds
 
     def _get_fedora_content_models(self, obj):
+            content_models = []
+
             if obj != None and 'RELS-EXT' in obj:
                 ds = obj['RELS-EXT']
-                content_models = [elem['value'].split('/')[1] for elem in ds[NS.fedoramodel.hasModel]]
-            else:
-                content_models = []
+                for elem in ds[NS.fedoramodel.hasModel]:
+                    cm = elem['value'].split('/')
+                    try:
+                        content_models.append(cm[1])
+                    except IndexError:
+                        pass
 
             return content_models
 
