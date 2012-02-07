@@ -19,5 +19,5 @@ setup(name='islandora_microservices',
       maintainer_email='jonathan@discoverygarden.ca',
       url='http://islandora.ca/',
       long_description=read('README'),
-      install_requires=['fcrepo', 'stomp.py<=3.0.3', 'yapsy', 'lxml'],
+      install_requires=['fcrepo', 'stomp.py<=3.0.3', 'yapsy<=1.8', 'lxml'],
      )
