@@ -167,11 +167,12 @@ class CoallianceMime():
         try:
             # translate - / + . into _ for the mimetype function
             trantab = string.maketrans('-/+.','____')
-            mime =  self.obj[dsid].mimeType.encode('ascii')
-            mime_function_name = mime.translate(trantab)
-            # get the function from the self object and run it
-            mime_function = getattr( self, mime_function_name, self.mimetype_none )
-            mime_function()
+            if(self.obj[dsid].mimeType):
+                mime =  self.obj[dsid].mimeType.encode('ascii')
+                mime_function_name = mime.translate(trantab)
+                # get the function from the self object and run it
+                mime_function = getattr( self, mime_function_name, self.mimetype_none )
+                mime_function()
         except KeyError:
             # we catch a key error because .mimeType throws one 
             # if no mimeType is defined 
