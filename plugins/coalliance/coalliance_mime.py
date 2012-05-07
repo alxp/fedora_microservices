@@ -151,6 +151,8 @@ class CoallianceMime():
         self.create_derivative('hasThumbnail', tn_postfix, self.create_thumbnail)
 
     # audio stuff
+    def audio_vnd_wave(self):
+        self.audio_derivative()
     def audio_x_wav(self):
         self.audio_derivative()
     def audio_mpeg(self):
