@@ -310,7 +310,7 @@ class IslandoraListener(ConnectionListener):
         Description:
             Remove an existing subscription - so that the client no longer receives messages from that destination.
         """
-        self.conn.unsubscribe(destination)
+        self.conn.unsubscribe(destination=destination)
 
     def connect(self):
         self.conn.start()
@@ -337,10 +337,14 @@ def alarm_handler(signum, frame):
             else:
                 signal.alarm(reconnect_wait)
     else:
-        if stomp_client.conn.is_connected():
-            signal.alarm(POLLING_TIME)
-        else:
-            logger.error("Disconnected from JMS (fedora down?). Shutting down.")
+        try:
+            if stomp_client.conn.is_connected():
+                signal.alarm(POLLING_TIME)
+            else:
+                logger.error("Disconnected from JMS (fedora down?). Shutting down.")
+                sys.exit(1)
+        except:
+            logger.error("Unexpected Error. Shutting down.")
             sys.exit(1)
         
 def shutdown_handler(signum, frame):
