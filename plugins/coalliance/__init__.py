@@ -8,6 +8,7 @@ from islandoraUtils.metadata.fedora_relationships import rels_int, rels_namespac
 from plugin_manager import IslandoraListenerPlugin
 from fcrepo.connection import FedoraConnectionException
 from coalliance_mime import CoallianceMime
+from islandoraUtils.metadata.fedora_relationships import rels_int, rels_namespace, rels_object
 import coalliance_metadata
 
 class coalliance(IslandoraListenerPlugin):
@@ -29,7 +30,7 @@ class coalliance(IslandoraListenerPlugin):
 
     def fedoraMessage(self, message, obj, client):
         # if this is a ingest method, then we want to do actions for each datastream
-        comime = CoallianceMime(obj, message)
+        comime = CoallianceMime(obj)
         if message['method'] == 'ingest':
             for dsid in obj:
                 self.processMessage(dsid, obj, comime)
@@ -45,6 +46,34 @@ class coalliance(IslandoraListenerPlugin):
          
     def islandoraMessage(self, method, message, client):
         if method == 'generateDerivatives':
-            pass
+            if 'pid' not in message:
+                self.logger.error("No PID passed in message.")
+            try:
+                obj = client.getObject(message['pid'])
+                comime = CoallianceMime(obj)
+                for dsid in obj:
+                    self.processMessage(dsid, obj, comime)
+            except:
+                self.logger.error('Pid does not exist. Pid %s' % message['pid'])
         elif method == 'regenerateDerivatives':
-            pass
+            if 'pid' not in message:
+                self.logger.error("No PID passed in message.")
+            try:
+                obj = client.getObject(message['pid'])
+                try:
+                    obj['TN'].delete()
+                except:
+                    pass
+                relsint = rels_int(obj, rels_namespace('coal', 'http://www.coalliance.org/ontologies/relsint'), 'coal')
+                relationships = relsint.getRelationships()
+                for relationship in relationships:
+                    try:
+                        obj[relationship[2].data].delete()
+                    except:
+                        pass
+                comime = CoallianceMime(obj)
+                for dsid in obj:
+                    self.processMessage(dsid, obj, comime)
+            except:
+                self.logger.error('Pid does not exist. Pid %s' % message['pid'])
+           

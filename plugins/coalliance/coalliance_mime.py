@@ -13,9 +13,8 @@ tn_postfix = '-tn.jpg'
 
 class CoallianceMime():
 
-    def __init__(self, obj, message):
+    def __init__(self, obj):
         self.obj = obj
-        self.message = message
 
     def create_thumbnail(self, obj, dsid, tnid):
         r = DSC.create_thumbnail(obj, dsid, tnid)

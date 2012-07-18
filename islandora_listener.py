@@ -157,7 +157,10 @@ class IslandoraListener(ConnectionListener):
 
         # pivot on the message type
         if headers['destination'] == ISLANDORA_TOPIC:
-            method = headers['method']
+            if 'method' in headers:
+                method = headers['method']
+            else:
+                method = None
 
             if method in islandora_methods:
                 plugin_set = islandora_methods['all'] | islandora_methods[method]
