@@ -198,6 +198,7 @@ class IslandoraListener(ConnectionListener):
 
             for plugin in (plugin_set_cm & plugin_set_methods):
                 try:
+                    logger.info('Processing PID: %(pid)s with plugin: %(plugin)s.' % {'pid' : pid, 'plugin' : plugin.name})
                     plugin.plugin_object.fedoraMessage(message, obj, self.client)
                 except:
                     logger.exception('Uncaught exception in plugin: %s!' % plugin.name)
