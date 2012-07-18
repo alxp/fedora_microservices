@@ -212,22 +212,6 @@ class IslandoraListener(ConnectionListener):
         self.disconnect()
         os._exit(1)
 
-# broken code to retry on error, when we have an unstable server
-# i think its worth fixing this code, currently its hard to test because
-# this only happens sometimes
-#    def on_error(self, headers, body):
-#        """
-#        \see ConnectionListener::on_error
-#        """
-#        global disconnected_state
-#        disconnected_state = True
-#        logger.error("Error reported by Stomp. Trying to reconnect.")
-#        logger.error(body)
-#        logger.debug('here')
-#        self.conn.stop()
-#        logger.debug('there')
-#        signal.alarm(reconnect_wait)
-        
     def on_connected(self, headers, body):
         """
         \see ConnectionListener::on_connected
@@ -356,14 +340,12 @@ def alarm_handler(signum, frame):
         if stomp_client.conn.is_connected():
             signal.alarm(POLLING_TIME)
         else:
+            logger.error("Disconnected from JMS (fedora down?). Shutting down.")
             sys.exit(1)
         
-
-        
 def shutdown_handler(signum, frame):
-
-    stomp_client.disconnect();
-    sys.exit(0);
+    stomp_client.disconnect()
+    sys.exit(0)
 
 if __name__ == '__main__':
 

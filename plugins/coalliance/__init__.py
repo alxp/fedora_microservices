@@ -44,5 +44,7 @@ class coalliance(IslandoraListenerPlugin):
             self.processMessage(message['dsid'], obj, comime)
          
     def islandoraMessage(self, method, message, client):
-        pass
-        
+        if method == 'generateDerivatives':
+            pass
+        elif method == 'regenerateDerivatives':
+            pass
