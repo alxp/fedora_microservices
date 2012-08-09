@@ -170,6 +170,7 @@ class IslandoraListener(ConnectionListener):
             for plugin in plugin_set:
                 try:
                     message = json.loads(body)
+                    plugin.plugin_object.stomp = self
                     plugin.plugin_object.islandoraMessage(method, message, self.client)
                 except:
                     logger.exception('Uncaught exception in plugin: %s!' % plugin.name)
@@ -280,7 +281,7 @@ class IslandoraListener(ConnectionListener):
         except NotConnectedException:
             pass
     
-    def send(self, destination, correlation_id, message):
+    def send(self, destination, message, headers = {}):
         """
         Required Parametes:
             destination - where to send the message
@@ -289,7 +290,7 @@ class IslandoraListener(ConnectionListener):
         Description:
         Sends a message to a destination in the message system.
         """
-        self.conn.send(destination=destination, message=message, headers={'correlation-id': correlation_id})
+        self.conn.send(destination=destination, message=message, headers=headers)
         
     def subscribe(self, destination, ack='auto'):
         """

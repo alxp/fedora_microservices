@@ -10,6 +10,7 @@ from fcrepo.connection import FedoraConnectionException
 from coalliance_mime import CoallianceMime
 from islandoraUtils.metadata.fedora_relationships import rels_int, rels_namespace, rels_object
 import coalliance_metadata
+import json
 
 class coalliance(IslandoraListenerPlugin):
 
@@ -71,9 +72,7 @@ class coalliance(IslandoraListenerPlugin):
                         obj[relationship[2].data].delete()
                     except:
                         pass
-                comime = CoallianceMime(obj)
-                for dsid in obj:
-                    self.processMessage(dsid, obj, comime)
+		self.stomp.send('/topic/islandora', json.dumps(message), {'method' : 'generateDerivatives'})
             except:
                 self.logger.error('Pid does not exist. Pid %s' % message['pid'])
            
