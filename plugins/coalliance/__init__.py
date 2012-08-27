@@ -56,6 +56,7 @@ class coalliance(IslandoraListenerPlugin):
                     self.processMessage(dsid, obj, comime)
             except:
                 self.logger.error('Pid does not exist. Pid %s' % message['pid'])
+            self.logger.info('Derivative generation process complete for PID: %s' % message['pid'])
         elif method == 'regenerateDerivatives':
             if 'pid' not in message:
                 self.logger.error("No PID passed in message.")
@@ -67,6 +68,10 @@ class coalliance(IslandoraListenerPlugin):
                     pass
                 relsint = rels_int(obj, rels_namespace('coal', 'http://www.coalliance.org/ontologies/relsint'), 'coal')
                 relationships = relsint.getRelationships()
+                try:
+                    obj['RELS-INT'].delete()
+                except:
+                    pass
                 for relationship in relationships:
                     try:
                         obj[relationship[2].data].delete()
@@ -75,4 +80,3 @@ class coalliance(IslandoraListenerPlugin):
 		self.stomp.send('/topic/islandora', json.dumps(message), {'method' : 'generateDerivatives'})
             except:
                 self.logger.error('Pid does not exist. Pid %s' % message['pid'])
-           
