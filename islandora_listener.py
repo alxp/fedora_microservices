@@ -183,10 +183,10 @@ class IslandoraListener(ConnectionListener):
             # try to get fedora object, it could not exist
             try:
                 obj = self.client.getObject(pid)
+                content_models = self._get_fedora_content_models(obj)
             except FedoraConnectionException:
                 obj = None
-
-            content_models = self._get_fedora_content_models(obj)
+                content_models = []
 
             # add the content models to the message object for the plugin
             message['content_models'] = content_models

@@ -55,7 +55,7 @@ class coalliance(IslandoraListenerPlugin):
                 for dsid in obj:
                     self.processMessage(dsid, obj, comime)
             except:
-                self.logger.error('Pid does not exist. Pid %s' % message['pid'])
+                self.logger.exception('Pid does not exist. Pid %s' % message['pid'])
             self.logger.info('Derivative generation process complete for PID: %s' % message['pid'])
         elif method == 'regenerateDerivatives':
             if 'pid' not in message:
@@ -79,4 +79,4 @@ class coalliance(IslandoraListenerPlugin):
                         pass
 		self.stomp.send('/topic/islandora', json.dumps(message), {'method' : 'generateDerivatives'})
             except:
-                self.logger.error('Pid does not exist. Pid %s' % message['pid'])
+                self.logger.exception('Pid does not exist. Pid %s' % message['pid'])
