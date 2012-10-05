@@ -10,7 +10,6 @@ from islandoraUtils.metadata.fedora_relationships import rels_int, rels_namespac
 from islandoraUtils.fedoraLib import mangle_dsid
 
 tn_postfix = '-tn.jpg'
-
 class CoallianceMime():
 
     def __init__(self, obj):
@@ -79,30 +78,30 @@ class CoallianceMime():
             return False
 
     # meta functions called by multiple mime functions
-    def video_derivative(self):
-        self.create_derivative('hasMP4', '.mp4', DSC.create_mp4)
+    def video_derivative(self, source):
+        self.create_derivative('hasMP4', '-' + source + '.dip.mp4', DSC.create_mp4)
         relationship = self.relsint.getRelationships(subject=self.dsid, predicate='hasMP4')
         if(relationship):
             mp4id = relationship[0][2].data
-            self.create_derivative('hasThumbnail', tn_postfix, self.create_thumbnail, mp4id)
+            self.create_derivative('hasThumbnail', '-' + source + tn_postfix, self.create_thumbnail, mp4id)
 
-    def image_derivative(self):
-        self.create_derivative('hasThumbnail', tn_postfix, self.create_thumbnail)
-        self.create_derivative('hasJP2', '.jp2', DSC.create_jp2)
+    def image_derivative(self, source):
+        self.create_derivative('hasThumbnail', '-' + source + tn_postfix, self.create_thumbnail)
+        self.create_derivative('hasJP2', '-' + source + '.dip.jp2', DSC.create_jp2)
 
-    def document_derivative(self):
-        self.create_derivative('hasPDF', '.pdf', DSC.create_pdf)
+    def document_derivative(self, source):
+        self.create_derivative('hasPDF', '-' + source + '.dip.pdf', DSC.create_pdf)
         # get name of pdf to create swf and thumbnail from
         relationship = self.relsint.getRelationships(subject=self.dsid, predicate='hasPDF')
         if(relationship):
             pdfid = relationship[0][2].data
-            self.create_derivative('hasThumbnail', tn_postfix, self.create_thumbnail, pdfid)
-            self.create_derivative('hasSWF', '.swf', DSC.create_swf, pdfid)
+            self.create_derivative('hasThumbnail', '-' + source + tn_postfix, self.create_thumbnail, pdfid)
+            self.create_derivative('hasSWF', '-' + source + '.dip.swf', DSC.create_swf, pdfid)
     
-    def audio_derivative(self):
+    def audio_derivative(self, source):
         args = ['-mm', '--cbr', '-b96']
-        self.create_derivative('hasMP3', '.mp3', DSC.create_mp3, args=args)
-        self.create_derivative('hasOGG', '.ogg', DSC.create_ogg)
+        self.create_derivative('hasMP3', '-' + source + '.dip.mp3', DSC.create_mp3, args=args)
+        self.create_derivative('hasOGG', '-' + source + '.dip.ogg', DSC.create_ogg)
 
     ##
     ## functions need to be defined for each mimetype to be worked on
@@ -110,52 +109,52 @@ class CoallianceMime():
     
     # video stuff
     def video_mp4(self):
-        self.video_derivative()
+        self.video_derivative('MP4')
     def video_quicktime(self):
-        self.video_derivative()
+        self.video_derivative('MOV')
     def video_x_ms_wmv(self):
-        self.video_derivative()
+        self.video_derivative('WMV')
 
     # document stuff
     def application_pdf(self):
-        self.create_derivative('hasThumbnail', tn_postfix, self.create_thumbnail)
-        self.create_derivative('hasSWF', '.swf', DSC.create_swf)
+        self.create_derivative('hasThumbnail', '-PDF' + tn_postfix, self.create_thumbnail)
+        self.create_derivative('hasSWF', '-PDF' + '.dip.swf', DSC.create_swf)
     def application_vnd_ms_powerpoint(self):
-        self.document_derivative()
+        self.document_derivative('PPT')
     def application_vnd_ms_excel(self):
-        self.document_derivative()
+        self.document_derivative('XLS')
     def application_msword(self):
-        self.document_derivative()
+        self.document_derivative('DOC')
     def application_vnd_openxmlformats_officedocument_spreadsheetml_sheet(self):
-        self.document_derivative()
+        self.document_derivative('XSLX')
     def application_vnd_openxmlformats_officedocument_presentationml_presentation(self):
-        self.document_derivative()
+        self.document_derivative('PPTX')
     def application_vnd_openxmlformats_officedocument_wordprocessingml_document(self):
-        self.document_derivative()
+        self.document_derivative('DOCX')
     def text_rtf(self):
-        self.document_derivative()
+        self.document_derivative('RTF')
 
     # image stuff
     def image_jpeg(self):
-        self.image_derivative()
+        self.image_derivative('JPEG')
     def image_png(self):
-        self.image_derivative()
+        self.image_derivative('PNG')
     def image_tif(self):
-        self.image_derivative()
+        self.image_derivative('TIF')
     def image_tiff(self):
-        self.image_derivative()
+        self.image_derivative('TIFF')
     def image_jp2(self):
-        self.image_derivative()
+        self.image_derivative('JP2')
     def image_gif(self):
-        self.create_derivative('hasThumbnail', tn_postfix, self.create_thumbnail)
+        self.create_derivative('hasThumbnail', '-GIF' + tn_postfix, self.create_thumbnail)
 
     # audio stuff
     def audio_vnd_wave(self):
-        self.audio_derivative()
+        self.audio_derivative('WAV')
     def audio_x_wav(self):
-        self.audio_derivative()
+        self.audio_derivative('WAV')
     def audio_mpeg(self):
-        self.audio_derivative()
+        self.audio_derivative('MP3')
 
     # mimetype isn't found, do nothing
     def mimetype_none(self):
