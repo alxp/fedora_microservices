@@ -10,6 +10,7 @@ from islandoraUtils.metadata.fedora_relationships import rels_int, rels_namespac
 from islandoraUtils.fedoraLib import mangle_dsid
 
 tn_postfix = '-tn.jpg'
+
 class CoallianceMime():
 
     def __init__(self, obj):
