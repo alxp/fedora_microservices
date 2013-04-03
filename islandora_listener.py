@@ -381,6 +381,10 @@ if __name__ == '__main__':
         optionp.print_help()
         sys.exit(1)
 
+    # setup plugin manager and load plugins
+    plugin_path = set()
+    plugin_path.add(os.path.abspath(os.path.join(os.path.dirname(__file__),'plugins')))
+
     # load config file values and give error if its incorrect
     try:
         #messaging server
@@ -403,7 +407,13 @@ if __name__ == '__main__':
         log_backup = configp.getint('Logging','backup')
 
         #plugins
-        plugins_enabled = [v.strip() for v in configp.get('Plugins', 'enabled').split(',')]
+        plugins_enabled = set([v.strip() for v in configp.get('Plugins', 'enabled').split(',')])
+        plugin_paths = configp.get('Plugins', 'path')
+        if plugin_paths:
+            for path in [v.strip() for v in plugin_paths.split(',')]:
+                if not os.path.isabs(path):
+                    path = os.path.abspath(os.path.join(os.path.dirname(options.configfile), path))
+                plugin_path.add(path)
 
     except (ConfigParser.NoOptionError, ConfigParser.NoSectionError), e:
         print 'Error reading config file %s' % options.configfile
@@ -431,10 +441,12 @@ if __name__ == '__main__':
     root_logger.setLevel(levels[log_level])
     logger = logging.getLogger('IslandoraListener')
 
-    # setup plugin manager and load plugins
-    plugin_path = [os.path.join(os.path.dirname(__file__),'plugins')]
     if options.pluginpath:
-        plugin_path.extend([v.strip() for v in options.pluginpath.split(',')])
+        for path in [v.strip() for v in options.pluginpath.split(',')]:
+            if not os.path.isabs(path):
+                path = os.path.abspath(path)
+            plugin_path.add(path)
+
     logger.info("Plugin path: %s" % plugin_path)
     categories_filter = {"IslandoraListenerPluginPlugin": IslandoraListenerPlugin}
     plugin_extension = 'cfg'

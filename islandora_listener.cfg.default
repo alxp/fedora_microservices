@@ -27,3 +27,7 @@ password: password
 ; The module name of the plugins to use
 [Plugins]
 enabled: sample_plugin
+; A comma-separated list of paths to search plugins. Relative paths will
+; interpreted to be relative to wherever the config file lives. Absolute
+; paths will be used as-is.
+path: plugins
