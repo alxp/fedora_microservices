@@ -17,6 +17,8 @@ MICROSERVICES_PATH=/opt/islandora_microservices/
 CONFIG_FILE=/opt/islandora_microservices/config/islandora_listener.cfg
 PLUGIN_DIR=/opt/islandora_microservices/plugins_stable
 PID_SEARCH=`ps -ef | grep 'python' | grep 'islandora_listener' | grep $CONFIG_FILE | grep -v 'grep' | awk '{print $2}'`
+FEDORA_SERVER_ADDRESS=localhost
+ACTIVEMQ_CHECK=`nmap -p61616 $FEDORA_SERVER_ADDRESS | grep 61616 | awk '{ print $2 }'`
 
 # *** Please make sure you change the fedora user to reflect the local setup. ***
 FEDORA_USER=microservices
