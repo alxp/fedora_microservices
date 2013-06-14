@@ -87,7 +87,7 @@ force_start () {
 	done
 
 		if [ $ACTIVEMQ_CHECK = "open" ]; then
-			/bin/su - $MICROSERVICES_USER --shell=/bin/bash --command="env HOME=/opt/islandora_microservices $PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE -P $PLUGIN_DIR &>/dev/null 2>/dev/null"
+			/bin/su - $MICROSERVICES_USER --shell=/bin/bash --command="env HOME=/opt/islandora_microservices $PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE -P $PLUGIN_DIR &>/dev/null 2>/dev/null &"
 		else
 			echo "$PROG was unable to contact the ActiveMQ broker"
 			exit 1
@@ -98,6 +98,7 @@ force_start () {
 		if [ $RETVAL = 0 ]; then
 			echo ""
 			echo "$PROG started..."
+			echo ""
 			return 0
 		else
 			echo ""
