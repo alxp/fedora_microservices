@@ -28,7 +28,7 @@ See http://stackoverflow.com/questions/1512530/cant-install-lxml-python-2-6-3-os
 
 Fedora Setup:
 
-To use this package with Fedora's built-in ActiveMQ broker you will need to download the Spring distribution from http://www.springsource.org/download . Then copy the .jar files from the download package's lib directory into $FEDORA_HOME/tomcat/webapps/fedora/WEB-INF/lib to enable Stomp support in Fedora's embedded ActiveMQ broker.
+To use this package with Fedora's built-in ActiveMQ broker you will need to download the Spring distribution from http://www.springsource.org/download . Then copy the *.RELEASE.jar files from the download package's lib directory into $FEDORA_HOME/tomcat/webapps/fedora/WEB-INF/lib to enable Stomp support in Fedora's embedded ActiveMQ broker.
 
 Then edit your Fedora instance's configuration to add a Stomp broker. Edit $FEDORA_HOME/server/config/fedora.fcfg and edit the messaging section
 <param name="java.naming.provider.url" value="vm:(broker:(tcp://localhost:61616,stomp://localhost:61613))"/>
