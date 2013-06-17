@@ -86,25 +86,25 @@ force_start () {
 		fi
 	done
 
-		if [ $ACTIVEMQ_CHECK = "open" ]; then
-			/bin/su - $MICROSERVICES_USER --shell=/bin/bash --command="env HOME=/opt/islandora_microservices $PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE -P $PLUGIN_DIR &>/dev/null 2>/dev/null &"
-		else
-			echo "$PROG was unable to contact the ActiveMQ broker"
-			exit 1
-		fi
-		PID=`$PID_SEARCH`
-		ps -p $PID &>/dev/null 2>/dev/null
-		RETVAL=$?
-		if [ $RETVAL = 0 ]; then
-			echo ""
-			echo "$PROG started..."
-			echo ""
-			return 0
-		else
-			echo ""
-			echo "$PROG failed to start... Check your logs"
-			return 1
-		fi
+	if [ $ACTIVEMQ_CHECK = "open" ]; then
+		/bin/su - $MICROSERVICES_USER --shell=/bin/bash --command="env HOME=/opt/islandora_microservices $PYTHON ${MICROSERVICES_PATH}islandora_listener.py -C $CONFIG_FILE -P $PLUGIN_DIR &>/dev/null 2>/dev/null &"
+	else
+		echo "$PROG was unable to contact the ActiveMQ broker"
+		exit 1
+	fi
+	PID=`$PID_SEARCH`
+	ps -p $PID &>/dev/null 2>/dev/null
+	RETVAL=$?
+	if [ $RETVAL = 0 ]; then
+		echo ""
+		echo "$PROG started..."
+		echo ""
+		return 0
+	else
+		echo ""
+		echo "$PROG failed to start... Check your logs"
+		return 1
+	fi
 }
 
 stop() {
@@ -134,11 +134,6 @@ stop() {
 			sleep 5
 			# if it’s still running use kill -9
 			PID=`$PID_SEARCH`
-			if [ $PID ]; then
-				echo "process is still running, using kill -9"
-				kill -9 $PID
-				sleep 5
-			fi
 		fi
 		PID=`$PID_SEARCH`
 		if [ $PID ]; then
