@@ -22,12 +22,13 @@ if [ -f /etc/init.d/functions ]; then
 fi
 
 PROG="Islandora Microservices"
-PYTHON=/opt/islandora_microservices/.pythonbrew/pythons/Python-2.6.8/bin/python
+PYTHON=python
 MICROSERVICES_PATH=/opt/islandora_microservices/
 CONFIG_FILE=/opt/islandora_microservices/config/islandora_listener.cfg
 PLUGIN_DIR=/opt/islandora_microservices/plugins_stable
 START_STOP_WAIT=30
 FEDORA_SERVER_ADDRESS=localhost
+STOMP_PORT=61613
 MICROSERVICES_USER=microservices
 PID_SEARCH="pgrep -u $MICROSERVICES_USER -nf $CONFIG_FILE"
 
@@ -76,7 +77,7 @@ force_start () {
 	while [ $count -lt $startwait ]; do
 		echo -n "."
 		count=`expr $count + 1`
-		ACTIVEMQ_CHECK=`nmap -p61613 $FEDORA_SERVER_ADDRESS | grep 61613 | awk '{ print \$2 }'`
+		ACTIVEMQ_CHECK=`nmap -p$STOMP_PORT $FEDORA_SERVER_ADDRESS | grep $STOMP_PORT | awk '{ print \$2 }'`
 		sleep 1
 		if [ $ACTIVEMQ_CHECK = "open" ]; then
 			break
@@ -90,7 +91,7 @@ force_start () {
 		exit 1
 	fi
 	PID=`$PID_SEARCH`
-	ps -p $PID &>/dev/null 2>/dev/null
+	ps -p $PID &>/dev/null
 	RETVAL=$?
 	if [ $RETVAL = 0 ]; then
 		echo ""
