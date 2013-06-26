@@ -130,8 +130,6 @@ stop() {
 			PID=`$PID_SEARCH`
 			kill $PID
 			sleep 5
-			# if it’s still running use kill -9
-			PID=`$PID_SEARCH`
 		fi
 		PID=`$PID_SEARCH`
 		if [ $PID ]; then
