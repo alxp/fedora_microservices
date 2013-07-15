@@ -12,7 +12,7 @@ This script relies on Python 2.6 or greater. This script uses the lxml, fcrepo, 
 
 $ python setup.py install
 
-Note that the lxml libraries have caused problems with automatic installation on some operating systems.  
+Note that the lxml libraries have caused problems with automatic installation on some operating systems.
 
 Ubuntu:
 apt-get install python-lxml
@@ -28,7 +28,7 @@ See http://stackoverflow.com/questions/1512530/cant-install-lxml-python-2-6-3-os
 
 Fedora Setup:
 
-To use this package with Fedora's built-in ActiveMQ broker you will need to download the Spring distribution from http://www.springsource.org/download . Then copy the .jar files from the download package's dist directory into $FEDORA_HOME/tomcat/webapps/fedora/WEB-INF/lib to enable Stomp support in Fedora's embedded ActiveMQ broker.
+To use this package with Fedora's built-in ActiveMQ broker you will need to download the Spring distribution from http://www.springsource.org/download . Then copy the *.RELEASE.jar files from the download package's lib directory into $FEDORA_HOME/tomcat/webapps/fedora/WEB-INF/lib to enable Stomp support in Fedora's embedded ActiveMQ broker.
 
 Then edit your Fedora instance's configuration to add a Stomp broker. Edit $FEDORA_HOME/server/config/fedora.fcfg and edit the messaging section
 <param name="java.naming.provider.url" value="vm:(broker:(tcp://localhost:61616,stomp://localhost:61613))"/>
@@ -37,7 +37,7 @@ Adding the Stomp URL will send messages to both the ActiveMQ port on 61616 and t
 
 Restart Fedora and it should be ready to go.
 
-This package contains a script islandora_listener.py and it also contains an init script islandora_listener. The init script is written for debian based systems but should work with minor modifications on other systems.
+This package contains a script islandora_listener.py and it also contains an init script islandora_microservices. The init script is written for debian based systems but should work with minor modifications on other systems.
 
 Run islandora_listener.py with the following command-line parameters:
 Usage: islandora_listener.py [options]
