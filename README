@@ -8,11 +8,12 @@ Installation requirements:
 
 Dependencies:
 
-This script relies on Python 2.6 or greater. This script uses the lxml, fcrepo, stompy and yapsy python libraries. These should be downloaded and installed automatically if you run setup.py script:
+This script relies on Python 2.6 or greater. This script uses the lxml, fcrepo, stompy and yapsy python libraries. Except for fcrpeo these should be downloaded and installed automatically if you run setup.py script:
 
 $ python setup.py install
 
 Note that the lxml libraries have caused problems with automatic installation on some operating systems.
+Please use discoverygarden's fork of fcrepo at https://github.com/discoverygarden/fcrepo for best results.
 
 Ubuntu:
 apt-get install python-lxml
