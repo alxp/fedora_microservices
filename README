@@ -38,6 +38,8 @@ Adding the Stomp URL will send messages to both the ActiveMQ port on 61616 and t
 
 Restart Fedora and it should be ready to go.
 
+Note that by default Fedora credentials are not passed, and users can post to ActiveMQ without any security. Make sure users can’t access whatever port STOMP is listening to. 
+
 This package contains a script islandora_listener.py and it also contains an init script islandora_microservices. The init script is written for debian based systems but should work with minor modifications on other systems.
 
 Run islandora_listener.py with the following command-line parameters:
